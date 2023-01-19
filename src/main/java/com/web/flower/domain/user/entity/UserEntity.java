@@ -14,7 +14,7 @@ import java.util.UUID;
 @Getter
 @Table(name = "user")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class User {
+public class UserEntity {
 
     @Id
     @Type(type = "uuid-char")
@@ -37,7 +37,7 @@ public class User {
     private LocalDateTime updatedAt;
 
     @Builder
-    public User(UUID id, String username, String password, String roles, String profileName, int profileAge, String profileImagePath, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public UserEntity(UUID id, String username, String password, String roles, String profileName, int profileAge, String profileImagePath, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.username = username;
         this.password = password;
