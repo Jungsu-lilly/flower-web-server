@@ -24,7 +24,7 @@ public class UserEntity {
 
     private String password;
 
-    private String roles;
+    private String role;
 
     private String profileName;
 
@@ -37,11 +37,11 @@ public class UserEntity {
     private LocalDateTime updatedAt;
 
     @Builder
-    public UserEntity(UUID id, String username, String password, String roles, String profileName, int profileAge, String profileImagePath, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public UserEntity(UUID id, String username, String password, String role, String profileName, int profileAge, String profileImagePath, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.username = username;
         this.password = password;
-        this.roles = roles;
+        this.role = role;
         this.profileName = profileName;
         this.profileAge = profileAge;
         this.profileImagePath = profileImagePath;

@@ -7,6 +7,7 @@ import com.web.flower.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import javax.security.auth.login.CredentialException;
 import java.util.UUID;
 
 @RestController
@@ -32,11 +33,14 @@ public class UserController {
     }
 
     @DeleteMapping("")
-    public String deleteUser(@RequestBody UserReqDto req){
+    public String deleteUser(@RequestBody UserReqDto req) throws Exception {
+        String s = null;
+
         try {
-            return userService.deleteUser(req);
+            s = userService.deleteUser(req);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new Exception(e.getMessage());
         }
+        return s;
     }
 }
