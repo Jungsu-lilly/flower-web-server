@@ -28,7 +28,12 @@ public class UserService {
 
     private final UserDetailsService userDetailsService;
 
-    public String save(UserReqDto reqDto){
+    public String save(UserReqDto reqDto) throws Exception {
+        Optional<UserEntity> findUser = userRepository.findByUsername(reqDto.getUsername());
+
+        if(findUser.isPresent()){
+            throw new Exception("유저 이름(이메일)이 이미 존재합니다. 다른 값을 입력해주세요.");
+        }
         UUID id = UUID.randomUUID();
         String password = passwordEncoder.encode(reqDto.getPassword());
 

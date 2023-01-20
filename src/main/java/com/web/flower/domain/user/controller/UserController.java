@@ -19,7 +19,11 @@ public class UserController {
 
     @PostMapping("")
     public String createUser(@RequestBody UserReqDto req){
-        return userService.save(req);
+        try {
+            return userService.save(req);
+        } catch (Exception e) {
+            return e.getMessage();
+        }
     }
 
     @GetMapping("")
