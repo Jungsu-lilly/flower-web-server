@@ -1,4 +1,4 @@
-package com.web.flower.security.auth;
+package com.web.flower.security.domain;
 
 import com.web.flower.domain.user.entity.UserEntity;
 import org.springframework.security.core.GrantedAuthority;

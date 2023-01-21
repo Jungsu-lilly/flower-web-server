@@ -1,11 +1,9 @@
 package com.web.flower.security.controller;
 
-import com.web.flower.domain.user.entity.UserEntity;
-import com.web.flower.security.auth.UserEntityDetails;
+import com.web.flower.security.domain.UserEntityDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController

@@ -1,13 +1,11 @@
-package com.web.flower.security.jwt;
+package com.web.flower.security.filter;
 
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.web.flower.domain.user.entity.UserEntity;
-import com.web.flower.security.auth.UserEntityDetails;
-import com.web.flower.security.domain.Message;
+import com.web.flower.security.JwtProperties;
 import com.web.flower.security.service.JwtService;
-import com.web.flower.security.service.RefreshTokenService;
+import com.web.flower.security.domain.UserEntityDetails;
+import com.web.flower.security.domain.Message;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,7 +24,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Date;
 
 // 스프링 시큐리티에서 UsernamePasswordAuthenticationFilter 가 있다.
 // /login 요청해서 username, password POST 전송하면 위 필터가 동작한다.
@@ -35,9 +32,6 @@ import java.util.Date;
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
-
-    @Autowired
-    private RefreshTokenService refreshTokenService;
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {

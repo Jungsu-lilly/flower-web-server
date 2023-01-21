@@ -1,7 +1,6 @@
-package com.web.flower.security.auth;
+package com.web.flower.security.provider;
 
-import com.web.flower.security.auth.UserEntityDetails;
-import lombok.RequiredArgsConstructor;
+import com.web.flower.security.domain.UserEntityDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -13,7 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.transaction.Transactional;
 
-public class FormAuthenticationProvider implements AuthenticationProvider {
+public class JwtAuthenticationProvider implements AuthenticationProvider {
 
     @Autowired
     public PasswordEncoder passwordEncoder;
@@ -21,7 +20,7 @@ public class FormAuthenticationProvider implements AuthenticationProvider {
     @Autowired
     public UserDetailsService userDetailsService;
 
-    public FormAuthenticationProvider(PasswordEncoder passwordEncoder) {
+    public JwtAuthenticationProvider(PasswordEncoder passwordEncoder) {
         this.passwordEncoder = passwordEncoder;
     }
 

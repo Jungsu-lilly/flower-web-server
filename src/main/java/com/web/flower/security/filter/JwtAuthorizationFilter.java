@@ -1,16 +1,15 @@
-package com.web.flower.security.jwt;
+package com.web.flower.security.filter;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.TokenExpiredException;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.web.flower.domain.user.entity.UserEntity;
 import com.web.flower.domain.user.repository.UserRepository;
-import com.web.flower.security.auth.UserEntityDetails;
-import com.web.flower.security.domain.Message;
+import com.web.flower.security.JwtProperties;
 import com.web.flower.security.service.JwtService;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
+import com.web.flower.security.domain.UserEntityDetails;
+import com.web.flower.security.domain.Message;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;

@@ -1,10 +1,9 @@
-package com.web.flower.security.auth;
+package com.web.flower.security.service;
 
 import com.web.flower.domain.user.entity.UserEntity;
 import com.web.flower.domain.user.repository.UserRepository;
-import com.web.flower.security.auth.UserEntityDetails;
+import com.web.flower.security.domain.UserEntityDetails;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

@@ -1,4 +1,4 @@
-package com.web.flower.security.jwt;
+package com.web.flower.security;
 
 public interface JwtProperties {
 

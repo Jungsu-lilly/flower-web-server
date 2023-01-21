@@ -2,8 +2,8 @@ package com.web.flower.security.service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.web.flower.security.auth.UserEntityDetails;
-import com.web.flower.security.jwt.JwtProperties;
+import com.web.flower.security.JwtProperties;
+import com.web.flower.security.domain.UserEntityDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;

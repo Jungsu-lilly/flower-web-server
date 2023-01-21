@@ -1,9 +1,9 @@
-package com.web.flower.security;
+package com.web.flower.security.config;
 
 import com.web.flower.domain.user.repository.UserRepository;
-import com.web.flower.security.jwt.JwtAuthenticationFilter;
-import com.web.flower.security.jwt.JwtAuthorizationFilter;
-import com.web.flower.security.auth.FormAuthenticationProvider;
+import com.web.flower.security.filter.JwtAuthenticationFilter;
+import com.web.flower.security.filter.JwtAuthorizationFilter;
+import com.web.flower.security.provider.JwtAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,7 +37,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationProvider authenticationProvider(){
-        return new FormAuthenticationProvider(passwordEncoder());
+        return new JwtAuthenticationProvider(passwordEncoder());
     }
 
     @Bean
