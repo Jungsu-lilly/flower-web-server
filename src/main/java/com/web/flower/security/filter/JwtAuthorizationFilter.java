@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.web.flower.domain.user.entity.UserEntity;
 import com.web.flower.domain.user.repository.UserRepository;
 import com.web.flower.security.JwtProperties;
+import com.web.flower.security.domain.RefreshToken;
+import com.web.flower.security.repository.RefreshTokenRepository;
 import com.web.flower.security.service.JwtService;
 import com.web.flower.security.domain.UserEntityDetails;
 import com.web.flower.security.domain.Message;
@@ -23,6 +25,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Optional;
 
 // 시큐리티가 필터를 가지고 있는데 그 필터중에 BasicAuthenticationFilter 가 있음.
 // 권한이나 인증이 필요한 특정 주소를 요청했을 때 위 필터를 무조건 타게 되어있음
@@ -30,6 +33,8 @@ import java.io.IOException;
 public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
     private UserRepository userRepository;
+
+    private RefreshTokenRepository refreshTokenRepository;
     public JwtAuthorizationFilter(AuthenticationManager authenticationManager, UserRepository userRepository) {
         super(authenticationManager);
         this.userRepository = userRepository;
@@ -41,9 +46,6 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
         System.out.println("인증이나 권한이 필요한 주소 요청됨");
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("auth = " + auth);
-
         String username = "";
 
         String jwtHeader= request.getHeader("Authorization");
@@ -57,27 +59,20 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
         if(refreshTokenHeader!=null){ // 요청에서 리프레시 토큰을 가지고 왔다면
             String refreshToken = request.getHeader("Refresh-Token").replace("Bearer ","");
-
             try {
                 username = validateToken("cos", refreshToken);
             }catch (TokenExpiredException e){
-                System.out.println("refreshToken 만료됨. 재인증이 필요합니다.");
+                System.out.println("RefreshToken 만료됨. 재인증이 필요합니다.");
                 makeResponse(request, response, "refresh_token_expired", "refresh_token_expired. 재인증이 필요합니다.");
                 chain.doFilter(request, response);
             }
-            // 새로운 accessToken 발급
             System.out.println("새 accessToken 발급");
             UserEntity userEntity = userRepository.findByUsername(username).get();
 
             UserEntityDetails userEntityDetails = new UserEntityDetails(userEntity);
-            String newAccessToken = JwtService.createAccessToken(userEntityDetails);
+            String newAccessToken = JwtService.createAccessToken(userEntity);
 
             response.addHeader(JwtProperties.JWT_HEADER,JwtProperties.TOKEN_PREFIX+newAccessToken);
-            chain.doFilter(request, response);
-
-            // JWT 토큰 서명을 통해서 서명이 정상이면 Authentication 객체를 만들어준다.
-            // 강제로 시큐리티 세션에 접근하여 Authentication 객체를 저장
-            setAuthenticationTokenToSecurityContext(userEntityDetails);
             chain.doFilter(request, response);
         }
 

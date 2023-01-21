@@ -3,6 +3,8 @@ package com.web.flower.security.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.web.flower.domain.user.entity.UserEntity;
 import com.web.flower.security.JwtProperties;
+import com.web.flower.security.domain.RefreshToken;
+import com.web.flower.security.repository.RefreshTokenRepository;
 import com.web.flower.security.service.JwtService;
 import com.web.flower.security.domain.UserEntityDetails;
 import com.web.flower.security.domain.Message;
@@ -24,6 +26,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Date;
+import java.util.Optional;
+import java.util.UUID;
 
 // 스프링 시큐리티에서 UsernamePasswordAuthenticationFilter 가 있다.
 // /login 요청해서 username, password POST 전송하면 위 필터가 동작한다.
@@ -32,6 +37,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
@@ -55,14 +61,32 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     // attemptAuthentication 실행 후, 인증이 정상적으로 되었다면 successfulAuthentication 함수가 실행된다.
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        System.out.println("successfulAuthentication 실행됨");
-        UserEntityDetails userEntityDetails = (UserEntityDetails) authResult.getPrincipal();
+        System.out.println("successfulAuthentication 실행");
+        UserEntity userEntity = ((UserEntityDetails) authResult.getPrincipal()).getUserEntity();
 
-        // Hash 암호화 방식
-        String jwtToken = JwtService.createAccessToken(userEntityDetails);
-        String refreshToken = JwtService.createRefreshToken(userEntityDetails);
+        String jwtToken = JwtService.createAccessToken(userEntity);
+        String refreshToken = JwtService.createRefreshToken(userEntity);
 
-        //refreshTokenService.save(refreshToken); // refresh Token DB에 저장
+
+        // refresh Token DB에 저장
+        // 이미 존재하는 refresh Token이 있다면, 제거후 생성
+        boolean flag = true;
+
+        Optional<RefreshToken> findToken = refreshTokenRepository.findByUsername(userEntity.getUsername());
+
+        if(findToken.isPresent()){
+            refreshTokenRepository.delete(findToken.get());
+        }
+
+        RefreshToken buildToken = RefreshToken.builder()
+                .id(UUID.randomUUID())
+                .value(refreshToken)
+                .username(userEntity.getUsername())
+                .build();
+
+        System.out.println("buildToken = " + buildToken);
+
+        refreshTokenRepository.save(buildToken);
 
         response.addHeader(JwtProperties.JWT_HEADER,JwtProperties.TOKEN_PREFIX+jwtToken);
         response.addHeader(JwtProperties.REFRESH_HEADER, JwtProperties.TOKEN_PREFIX+refreshToken);

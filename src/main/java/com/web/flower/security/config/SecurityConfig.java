@@ -4,6 +4,7 @@ import com.web.flower.domain.user.repository.UserRepository;
 import com.web.flower.security.filter.JwtAuthenticationFilter;
 import com.web.flower.security.filter.JwtAuthorizationFilter;
 import com.web.flower.security.provider.JwtAuthenticationProvider;
+import com.web.flower.security.repository.RefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +27,8 @@ public class SecurityConfig {
     @Autowired private CorsFilter corsFilter;
 
     @Autowired private UserRepository userRepository;
+
+    @Autowired private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
     private AuthenticationSuccessHandler customAuthenticationSuccessHandler;
@@ -72,7 +75,7 @@ public class SecurityConfig {
             AuthenticationManager authenticationManager = http.getSharedObject(AuthenticationManager.class);
             http
                     .addFilter(corsFilter)
-                    .addFilter(new JwtAuthenticationFilter(authenticationManager))
+                    .addFilter(new JwtAuthenticationFilter(authenticationManager, refreshTokenRepository))
                     .addFilter(new JwtAuthorizationFilter(authenticationManager, userRepository));
         }
     }
