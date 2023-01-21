@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
@@ -40,6 +41,9 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
         System.out.println("인증이나 권한이 필요한 주소 요청됨");
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("auth = " + auth);
+
         String username = "";
 
         String jwtHeader= request.getHeader("Authorization");
@@ -64,18 +68,17 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             // 새로운 accessToken 발급
             System.out.println("새 accessToken 발급");
             UserEntity userEntity = userRepository.findByUsername(username).get();
+
             UserEntityDetails userEntityDetails = new UserEntityDetails(userEntity);
             String newAccessToken = JwtService.createAccessToken(userEntityDetails);
 
             response.addHeader(JwtProperties.JWT_HEADER,JwtProperties.TOKEN_PREFIX+newAccessToken);
             chain.doFilter(request, response);
 
-//            UsernamePasswordAuthenticationToken authentication =
-//                    new UsernamePasswordAuthenticationToken(userEntityDetails, null, userEntityDetails.getAuthorities());
-//
-//            // 강제로 시큐리티 세션에 접근하여 Authentication 객체를 저장
-//            SecurityContextHolder.getContext().setAuthentication(authentication);
-//            chain.doFilter(request, response);
+            // JWT 토큰 서명을 통해서 서명이 정상이면 Authentication 객체를 만들어준다.
+            // 강제로 시큐리티 세션에 접근하여 Authentication 객체를 저장
+            setAuthenticationTokenToSecurityContext(userEntityDetails);
+            chain.doFilter(request, response);
         }
 
         // JWT를 검증해서 정상적인 사용자인지 확인!
@@ -97,13 +100,17 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             UserEntityDetails userEntityDetails = new UserEntityDetails(userEntity);
 
             // JWT 토큰 서명을 통해서 서명이 정상이면 Authentication 객체를 만들어준다.
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userEntityDetails, null, userEntityDetails.getAuthorities());
-
             // 강제로 시큐리티 세션에 접근하여 Authentication 객체를 저장
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            setAuthenticationTokenToSecurityContext(userEntityDetails);
             chain.doFilter(request, response);
         }
+    }
+
+    private static void setAuthenticationTokenToSecurityContext(UserEntityDetails userEntityDetails) {
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userEntityDetails, null, userEntityDetails.getAuthorities());
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     public String validateToken(String secret, String token) throws TokenExpiredException{
