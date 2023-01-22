@@ -56,7 +56,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
         String accessToken = request.getHeader("Authorization");
 
-        if(accessToken ==null) {
+        if(accessToken == null) {
             chain.doFilter(request, response);
             return;
         }
@@ -78,12 +78,13 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             catch (TokenExpiredException e1){
                 makeResponse(request, response,"refresh_token_expired", "재인증 필요");
                 chain.doFilter(request, response);
+                return;
             }
 
             UserEntity userEntity = userRepository.findById(UUID.fromString(userId)).get();
             String newAccessToken = JwtService.createAccessToken(userEntity);
 
-            makeResponse(request, response, "access_token_expired", "AccessToken을 재발급합니다.");
+            //makeResponse(request, response, "access_token_expired", "AccessToken을 재발급합니다.");
             System.out.println("새 accessToken 발급");
             String jwtToken = JwtService.createAccessToken(userEntity);
 
@@ -91,14 +92,14 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             cookie.setMaxAge(60*30); // 30분
             cookie.setHttpOnly(true);
             response.addCookie(cookie);
-            response.addHeader(JwtProperties.JWT_HEADER, "Bearer "+jwtToken);
+
             setAuthenticationTokenToSecurityContext(userEntity);
-            chain.doFilter(request, response);
         }
         catch (SignatureVerificationException e){
             System.out.println("Access 토큰값이 유효하지 않습니다. 다시 입력해주세요.");
             makeResponse(request, response, "wrong_token_value", "Access 토큰값이 잘못되었습니다.");
             chain.doFilter(request, response);
+            return;
         }
 
         // 서명이 정상적으로 됨
@@ -107,8 +108,8 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             // JWT 토큰 서명을 통해서 서명이 정상이면 Authentication 객체를 만들어준다.
             // 강제로 시큐리티 세션에 접근하여 Authentication 객체를 저장
             setAuthenticationTokenToSecurityContext(userEntity);
-            chain.doFilter(request, response);
         }
+        chain.doFilter(request, response);
     }
 
     private static void setAuthenticationTokenToSecurityContext(UserEntity userEntity) {
