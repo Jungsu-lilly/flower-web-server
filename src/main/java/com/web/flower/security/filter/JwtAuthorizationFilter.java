@@ -2,6 +2,7 @@ package com.web.flower.security.filter;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.web.flower.domain.user.entity.UserEntity;
@@ -86,6 +87,10 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             // 토큰 기한 만료. refresh token 요청
             System.out.println("jwt 토큰 유효기간 만료. Refresh Token을 가져와주세요.");
             makeResponse(request, response, "auth_token_expired", "refresh Token 필요");
+            chain.doFilter(request, response);
+        }catch (SignatureVerificationException e){
+            System.out.println("jwt 토큰값이 유효하지 않습니다. 다시 입력해주세요.");
+            makeResponse(request, response, "wrong_token_value", "jwt 토큰값이 잘못되었습니다.");
             chain.doFilter(request, response);
         }
 
