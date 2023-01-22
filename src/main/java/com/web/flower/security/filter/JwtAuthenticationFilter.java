@@ -23,6 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -67,12 +68,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         String jwtToken = JwtService.createAccessToken(userEntity);
         String refreshToken = JwtService.createRefreshToken(userEntity);
 
-
-        // refresh Token DB에 저장
-        // 이미 존재하는 refresh Token이 있다면, 제거후 생성
-        boolean flag = true;
-
-        Optional<RefreshToken> findToken = refreshTokenRepository.findByUsername(userEntity.getUsername());
+        // refresh Token DB에 저장. 이미 존재하는 RefreshToken 이 있다면, 제거 후 생성
+        Optional<RefreshToken> findToken = refreshTokenRepository.findByUserId(userEntity.getId());
 
         if(findToken.isPresent()){
             refreshTokenRepository.delete(findToken.get());
@@ -81,15 +78,14 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         RefreshToken buildToken = RefreshToken.builder()
                 .id(UUID.randomUUID())
                 .value(refreshToken)
-                .username(userEntity.getUsername())
+                .userId(userEntity.getId())
                 .build();
-
-        System.out.println("buildToken = " + buildToken);
-
         refreshTokenRepository.save(buildToken);
 
-        response.addHeader(JwtProperties.JWT_HEADER,JwtProperties.TOKEN_PREFIX+jwtToken);
-        response.addHeader(JwtProperties.REFRESH_HEADER, JwtProperties.TOKEN_PREFIX+refreshToken);
+        Cookie cookie = new Cookie("Authorization",jwtToken);
+        cookie.setMaxAge(60*30); // 30분
+        cookie.setHttpOnly(true);
+        response.addCookie(cookie);
     }
 
     @Override
