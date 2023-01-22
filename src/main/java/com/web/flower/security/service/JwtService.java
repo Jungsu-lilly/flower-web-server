@@ -8,6 +8,7 @@ import com.web.flower.security.domain.UserEntityDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -24,7 +25,7 @@ public class JwtService {
 
     public static String createRefreshToken(UserEntity userEntity){
 
-        return  JWT.create()
+        return JWT.create()
                 .withSubject("refresh_token") // 토큰이름
                 .withExpiresAt(new Date(System.currentTimeMillis()+JwtProperties.REFRESH_EXPIRATION_TIME))
                 .withClaim("id", userEntity.getId().toString())

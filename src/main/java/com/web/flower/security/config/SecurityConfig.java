@@ -77,7 +77,7 @@ public class SecurityConfig {
             http
                     .addFilter(corsFilter)
                     .addFilter(new JwtAuthenticationFilter(authenticationManager, refreshTokenRepository))
-                    .addFilter(new JwtAuthorizationFilter(authenticationManager, userRepository));
+                    .addFilter(new JwtAuthorizationFilter(authenticationManager, userRepository, refreshTokenRepository));
         }
     }
 

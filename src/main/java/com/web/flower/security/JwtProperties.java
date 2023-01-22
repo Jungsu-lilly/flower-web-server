@@ -11,8 +11,6 @@ public interface JwtProperties {
     int EXPIRATION_TIME = MIN*7; // 7분
 
     int REFRESH_EXPIRATION_TIME = DAY*2; // 2일
-    String TOKEN_PREFIX = "Bearer ";
 
-    String JWT_HEADER = "Authorization";
-    String REFRESH_HEADER = "RefreshToken";
+    public String JWT_HEADER = "Authorization";
 }

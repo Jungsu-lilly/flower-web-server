@@ -26,6 +26,7 @@ public class RefreshToken {
 
     private Date createdAt;
 
-    private String username;
+    @Type(type = "uuid-char")
+    private UUID userId;
 
 }
