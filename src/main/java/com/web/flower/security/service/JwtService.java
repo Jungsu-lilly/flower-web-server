@@ -7,6 +7,8 @@ import com.web.flower.security.JwtProperties;
 import com.web.flower.security.domain.UserEntityDetails;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Date;
 import java.util.UUID;
 
@@ -17,7 +19,7 @@ public class JwtService {
 
         return JWT.create()
                 .withSubject("access_token") // 토큰이름
-                .withExpiresAt(new Date(System.currentTimeMillis()+ JwtProperties.SEC * 20))
+                .withExpiresAt(new Date(System.currentTimeMillis()+ JwtProperties.SEC * 10))
                 .withClaim("id", userEntity.getId().toString())
                 .withClaim("username", userEntity.getUsername())
                 .sign(Algorithm.HMAC512(JwtProperties.SECRET));
@@ -31,5 +33,11 @@ public class JwtService {
                 .withClaim("id", userEntity.getId().toString())
                 .withClaim("username", userEntity.getUsername())
                 .sign(Algorithm.HMAC512(JwtProperties.SECRET));
+    }
+    public static void makeCookie(HttpServletResponse response, String jwtToken, int time) {
+        Cookie cookie = new Cookie("Authorization", jwtToken);
+        cookie.setMaxAge(time); // 30분
+        cookie.setHttpOnly(true);
+        response.addCookie(cookie);
     }
 }
