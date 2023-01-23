@@ -2,14 +2,12 @@ package com.web.flower.security.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.web.flower.domain.user.entity.UserEntity;
-import com.web.flower.security.JwtProperties;
 import com.web.flower.security.domain.RefreshToken;
 import com.web.flower.security.repository.RefreshTokenRepository;
 import com.web.flower.security.service.JwtService;
 import com.web.flower.security.domain.UserEntityDetails;
 import com.web.flower.security.domain.Message;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,7 +25,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,9 +37,11 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenRepository refreshTokenRepository;
 
+    private final JwtService jwtService;
+
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-        System.out.println("JwtAuthenticationFilter: 로그인 요청 도착");
+        System.out.println("=== [AuthenticationFilter] 인증(로그인) 요청 도착 ===");
 
         try {
             ObjectMapper om = new ObjectMapper();
@@ -62,15 +61,14 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     // attemptAuthentication 실행 후, 인증이 정상적으로 되었다면 successfulAuthentication 함수가 실행된다.
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        System.out.println("successfulAuthentication 실행");
+        System.out.println("=== 사용자 인증 성공 ===");
         UserEntity userEntity = ((UserEntityDetails) authResult.getPrincipal()).getUserEntity();
 
-        String jwtToken = JwtService.createAccessToken(userEntity);
-        String refreshToken = JwtService.createRefreshToken(userEntity);
+        String jwtToken = jwtService.createAccessToken(userEntity);
+        String refreshToken = jwtService.createRefreshToken(userEntity);
 
         // refresh Token DB에 저장. 이미 존재하는 RefreshToken 이 있다면, 제거 후 생성
         Optional<RefreshToken> findToken = refreshTokenRepository.findByUserId(userEntity.getId());
-
         if(findToken.isPresent()){
             refreshTokenRepository.delete(findToken.get());
         }
@@ -83,7 +81,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         refreshTokenRepository.save(buildToken);
 
         Cookie cookie = new Cookie("Authorization",jwtToken);
-        cookie.setMaxAge(60*30); // 30분
+        cookie.setMaxAge(60*15); // 15분
         cookie.setHttpOnly(true);
         response.addCookie(cookie);
     }

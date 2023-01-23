@@ -5,6 +5,7 @@ import com.web.flower.security.filter.JwtAuthenticationFilter;
 import com.web.flower.security.filter.JwtAuthorizationFilter;
 import com.web.flower.security.provider.JwtAuthenticationProvider;
 import com.web.flower.security.repository.RefreshTokenRepository;
+import com.web.flower.security.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,11 +19,9 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.filter.CorsFilter;
 
 @Configuration
-@EnableWebSecurity
 public class SecurityConfig {
 
     @Autowired private CorsFilter corsFilter;
@@ -30,6 +29,8 @@ public class SecurityConfig {
     @Autowired private UserRepository userRepository;
 
     @Autowired private RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired private JwtService jwtService;
 
     @Autowired
     private AuthenticationSuccessHandler customAuthenticationSuccessHandler;
@@ -76,8 +77,8 @@ public class SecurityConfig {
             AuthenticationManager authenticationManager = http.getSharedObject(AuthenticationManager.class);
             http
                     .addFilter(corsFilter)
-                    .addFilter(new JwtAuthenticationFilter(authenticationManager, refreshTokenRepository))
-                    .addFilter(new JwtAuthorizationFilter(authenticationManager, userRepository, refreshTokenRepository));
+                    .addFilter(new JwtAuthenticationFilter(authenticationManager, refreshTokenRepository, jwtService))
+                    .addFilter(new JwtAuthorizationFilter(authenticationManager, userRepository, refreshTokenRepository, jwtService));
         }
     }
 
