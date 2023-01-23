@@ -76,6 +76,8 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
                 TokenValidator.validateToken("cos", refreshToken.get().getValue());
             }
             catch (TokenExpiredException e1){
+                System.out.println("=== RefreshToken 유효기간 만료 ===");
+                refreshTokenRepository.delete(refreshToken.get());
                 makeResponse(request, response,"refresh_token_expired", "재인증 필요");
                 chain.doFilter(request, response);
                 return;
