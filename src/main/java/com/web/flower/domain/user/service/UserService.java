@@ -36,12 +36,16 @@ public class UserService {
         }
         UUID id = UUID.randomUUID();
         String password = passwordEncoder.encode(reqDto.getPassword());
+        String userRole = reqDto.getRole();
+        if(userRole == null){
+            userRole = "ROLE_USER";
+        }
 
         UserEntity userEntity = UserEntity.builder()
                 .id(id)
                 .username(reqDto.getUsername())
                 .password(password)
-                .role("ROLE_USER")
+                .role(userRole)
                 .createdAt(LocalDateTime.now())
                 .build();
 
