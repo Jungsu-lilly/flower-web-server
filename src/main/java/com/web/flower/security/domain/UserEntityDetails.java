@@ -12,20 +12,20 @@ import java.util.List;
 
 public class UserEntityDetails implements UserDetails {
 
-    private UserEntity userEntity;
+    private User user;
 
-    public UserEntityDetails(UserEntity userEntity) {
-        this.userEntity = userEntity;
+    public UserEntityDetails(User user) {
+        this.user = user;
     }
 
-    public UserEntity getUserEntity(){
-        return userEntity;
+    public User getUserEntity(){
+        return user;
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Collection<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
-        List<String> roles = Arrays.asList(userEntity.getRole().split(","));
+        List<String> roles = Arrays.asList(user.getRole().split(","));
 
         roles.forEach(role -> {
             authorities.add(() -> role.strip());

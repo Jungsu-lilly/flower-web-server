@@ -15,35 +15,32 @@ import java.util.UUID;
 @Getter
 @Table(name = "user")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserEntity {
+public class User {
 
     @Id
     @Type(type = "uuid-char")
     private UUID id;
-
     private String username;
-
     private String password;
-
     private String role;
 
-    private String profileName;
-
+    private String provider;
+    private String providerId;
+    private String email;
     private int profileAge;
-
     private String profileImagePath;
-
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 
     @Builder
-    public UserEntity(UUID id, String username, String password, String role, String profileName, int profileAge, String profileImagePath, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public User(UUID id, String username, String password, String role, String provider, String providerId, String email, int profileAge, String profileImagePath, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.role = role;
-        this.profileName = profileName;
+        this.provider = provider;
+        this.providerId = providerId;
+        this.email = email;
         this.profileAge = profileAge;
         this.profileImagePath = profileImagePath;
         this.createdAt = createdAt;
