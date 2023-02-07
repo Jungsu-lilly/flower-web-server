@@ -1,6 +1,7 @@
 package com.web.flower.domain.user.dto;
 
-import com.web.flower.domain.user.entity.UserEntity;
+import com.web.flower.domain.user.entity.User;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -13,7 +14,7 @@ public class UserResListDto {
 
     private List<UserResDto> users = new ArrayList<>();
 
-    public static UserResListDto toDto(List<UserEntity> userEntityList){
+    public static UserResListDto toDto(List<User> userEntityList){
         List<UserResDto> tmp = new ArrayList<>();
         userEntityList.forEach(userEntity -> tmp.add(UserResDto.toDto(userEntity)));
 

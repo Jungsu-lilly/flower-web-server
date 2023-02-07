@@ -47,6 +47,10 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
+    public void setPassword(String password){this.password = password;}
+
+    public void setRole(String role){this.role = role;}
+
     @Override
     public String toString() {
         return "UserEntity{" +
