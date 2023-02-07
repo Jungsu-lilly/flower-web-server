@@ -20,14 +20,11 @@ public class PrincipalUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 
         System.out.println("=== PrincipalUserDetailsService : loadUserByUsername() =========");
-        Optional<User> byUsername = userRepository.findByUsername(username);
-        if(!byUsername.isPresent()){
-            throw new UsernameNotFoundException("해당 유저 이름(이메일)이 존재하지 않습니다.");
-        }
-        User user = byUsername.get();
+        User user = userRepository.findByUsername(username);
 //        List<GrantedAuthority> roles = new ArrayList<>();
 //        roles.add(new SimpleGrantedAuthority(user.getRole()));
 
+        System.out.println("user.getUsername() = " + user.getUsername());
         return new PrincipalDetails(user);
     }
 }

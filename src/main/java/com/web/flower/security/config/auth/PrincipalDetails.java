@@ -7,9 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 
 public class PrincipalDetails implements UserDetails, OAuth2User {
 
@@ -43,9 +41,13 @@ public class PrincipalDetails implements UserDetails, OAuth2User {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        Collection<GrantedAuthority> collect = new ArrayList<>();
-        collect.add(()-> {return user.getRole();});
-        return null;
+        Collection<GrantedAuthority> authorities = new ArrayList<GrantedAuthority>();
+        List<String> roles = Arrays.asList(user.getRole().split(","));
+
+        roles.forEach(role -> {
+            authorities.add(() -> role.strip());
+        });
+        return authorities;
     }
 
     @Override

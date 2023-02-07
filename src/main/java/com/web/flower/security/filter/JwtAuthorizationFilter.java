@@ -3,18 +3,21 @@ package com.web.flower.security.filter;
 import com.auth0.jwt.exceptions.SignatureVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.web.flower.domain.user.entity.UserEntity;
+
+import com.web.flower.domain.user.entity.User;
 import com.web.flower.domain.user.repository.UserRepository;
+import com.web.flower.security.config.auth.PrincipalDetails;
+import com.web.flower.security.config.auth.PrincipalUserDetailsService;
 import com.web.flower.security.domain.RefreshToken;
 import com.web.flower.security.repository.RefreshTokenRepository;
 import com.web.flower.security.service.JwtService;
-import com.web.flower.security.domain.UserEntityDetails;
 import com.web.flower.security.domain.Message;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.www.BasicAuthenticationConverter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import javax.servlet.FilterChain;
@@ -32,10 +35,10 @@ import java.util.stream.Collectors;
 public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
     private UserRepository userRepository;
-
     private RefreshTokenRepository refreshTokenRepository;
-
     private JwtService jwtService;
+
+    private BasicAuthenticationConverter authenticationConverter = new BasicAuthenticationConverter();
 
     public JwtAuthorizationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, JwtService jwtService) {
         super(authenticationManager);
@@ -50,109 +53,89 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
         System.out.println("=== [Authorization Filter] 인증이나 권한이 필요한 주소 요청됨 ===");
-        String username = null;
 
-        //Predicate<Cookie> authorizationCookiePredicate = (Cookie cookie) -> cookie.getName().equals("Authorization");
-        Cookie[] cookies = request.getCookies();
-        if(cookies==null){
+        Cookie cookie = null;
+        try {
+            cookie = Arrays.stream(request.getCookies())
+                    .filter(r -> r.getName().equals("Authorization"))
+                    .findAny()
+                    .orElse(null);
+        } catch (Exception e) { // 엑세스토큰이 존재 X
             chain.doFilter(request, response);
             return;
         }
-        List<Cookie> authorizationCookie = Arrays.asList(cookies).stream()
-                .filter(cookie -> cookie.getName().equals("Authorization")).collect(Collectors.toList());
-
-        Cookie cookie = authorizationCookie.get(0);
-        String accessToken = cookie.getValue();
-
-        if(accessToken == null) {
-            chain.doFilter(request, response);
-            return;
-        }
+        String accessToken = "";
         try{
-            username = jwtService.validateToken(accessToken);
+            accessToken = cookie.getValue();
         }
-        catch (TokenExpiredException e){
-            System.out.println("[AccessToken 만료됨]");
+        catch (NullPointerException e){
+            chain.doFilter(request, response);
+            return;
+        }
+        System.out.println("accessToken = " + accessToken);
+        boolean isAccessTokenExpired = false;
+
+        String username = null;
+        try {
+            username = jwtService.validateToken(accessToken);
+        } catch (TokenExpiredException e) {
+            // 엑세스토큰 만료
+            System.out.println("=== Access Token Expired ======");
+            isAccessTokenExpired = true;
+        } catch (SignatureVerificationException e) {
+            // 토큰 서명 오류
+            System.out.println("=== 토큰값 서명이 올바르지 않습니다. 다시 입력해주세요 ======");
+            chain.doFilter(request, response);
+            return;
+        }
+
+        System.out.println("username = " + username);
+        User user = userRepository.findByUsername(username);
+
+        if (isAccessTokenExpired) { // 엑세스 토큰이 만료된 경우
+            System.out.println("엑세스 토큰 만료");
+            // 엑세스 토큰에서 userId 추출
             String userId = jwtService.getUserIdFromToken(accessToken);
 
-            Optional<RefreshToken> refreshToken = refreshTokenRepository.findByUserId(UUID.fromString(userId));
-            if(!refreshToken.isPresent()){
-                //throw new NullPointerException("no refresh Token");
-                makeResponse(request, response, HttpStatus.NOT_FOUND,"no refresh_token exists","재인증(로그인) 필요");
-                return;
-            }
-            if (refreshTokenExpired(request, response, refreshToken.get())) {
+            // userId로 리프레쉬 토큰을 찾는다.
+            Optional<RefreshToken> byUserId = refreshTokenRepository.findByUserId(UUID.fromString(userId));
+            if (!byUserId.isPresent()) { // 리프레시 토큰이 없다면
+                makeResponse(request, response, HttpStatus.NOT_FOUND, "no refresh_token exists", "재인증(로그인) 필요");
                 chain.doFilter(request, response);
                 return;
             }
-
-            Optional<UserEntity> findUser = userRepository.findById(UUID.fromString(userId));
-            if(!findUser.isPresent()){
-                makeResponse(request, response, HttpStatus.NOT_FOUND, "user not found", "유저를 찾을 수 없습니다.");
-                throw new NoSuchElementException();
+            RefreshToken refreshToken = byUserId.get();
+            try {
+                String refreshTokenValue = refreshToken.getValue();
+                jwtService.validateToken(refreshTokenValue);
+            } catch (TokenExpiredException e) { // 리프레시 토큰 만료
+                System.out.println("=== 리프레시 토큰 만료. 재인증 필요 =====");
+                chain.doFilter(request, response);
+                return;
             }
-            UserEntity userEntity = findUser.get();
+            // 리프레시 토큰이 유효할 때
+            // AccessToken 재발급
+            System.out.println("=== 새 AccessToken 발급 =====");
+            String newAccessToken = jwtService.createAccessToken(user);
 
-            System.out.println("새 AccessToken 발급");
-            issueNewAccessToken(response, userEntity);
-            makeResponse(request, response, HttpStatus.OK,"access_token_expired","엑세스토큰을 재발급합니다.");
-        }
-        catch (SignatureVerificationException e){
-            invalidAccessToken(request, response, chain);
-            chain.doFilter(request, response);
-            return;
-        }
+            Cookie resCookie = new Cookie("Authorization", newAccessToken);
+            resCookie.setMaxAge(20); // 20초
+            resCookie.setHttpOnly(true);
+            response.addCookie(resCookie);
 
-        // 서명이 정상적으로 됨
-        if(username!=null){
-            UserEntity userEntity = userRepository.findByUsername(username).get();
-            // JWT 토큰 서명을 통해서 서명이 정상이면 Authentication 객체를 만들어준다.
-            // 강제로 시큐리티 세션에 접근하여 Authentication 객체를 저장
-            setAuthenticationTokenToSecurityContext(userEntity);
+            makeResponse(request, response, HttpStatus.OK, "access_token_expired", "엑세스토큰을 재발급합니다.");
         }
+        PrincipalDetails principalDetails = new PrincipalDetails(user);
+
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(principalDetails, null, principalDetails.getAuthorities());
+
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
         chain.doFilter(request, response);
     }
 
-
-    private static void invalidAccessToken(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
-        System.out.println("Access 토큰값이 유효하지 않습니다. 다시 입력해주세요.");
-        makeResponse(request, response, HttpStatus.UNAUTHORIZED,"wrong_token_value", "Access 토큰값이 잘못되었습니다.");
-        chain.doFilter(request, response);
-        return;
-    }
-
-    private boolean refreshTokenExpired(HttpServletRequest request, HttpServletResponse response, RefreshToken refreshToken) throws IOException, ServletException {
-        try{
-            jwtService.validateToken(refreshToken.getValue());
-        }
-        catch (TokenExpiredException e1){
-            System.out.println("=== RefreshToken 유효기간 만료 ===");
-            refreshTokenRepository.delete(refreshToken);
-            makeResponse(request, response, HttpStatus.UNAUTHORIZED,"refresh_token_expired", "재인증 필요");
-            return true;
-        }
-        return false;
-    }
-
-
-    private void issueNewAccessToken(HttpServletResponse response, UserEntity userEntity) {
-        String newAccessToken = jwtService.createAccessToken(userEntity);
-        String jwtToken = jwtService.createAccessToken(userEntity);
-
-        JwtService.makeCookie(response, jwtToken, 60*30);
-        setAuthenticationTokenToSecurityContext(userEntity);
-    }
-
-
-    private static void setAuthenticationTokenToSecurityContext(UserEntity userEntity) {
-        UserEntityDetails userEntityDetails = new UserEntityDetails(userEntity);
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(userEntityDetails, null, userEntityDetails.getAuthorities());
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-    }
-
-    private static void makeResponse(HttpServletRequest request, HttpServletResponse response, HttpStatus status, String msg, String memo) throws IOException, ServletException {
+    public void makeResponse(HttpServletRequest request, HttpServletResponse response, HttpStatus status, String msg, String memo) throws IOException, ServletException {
         ObjectMapper om = new ObjectMapper();
         Message message = Message.builder()
                 .message(msg)
@@ -162,7 +145,6 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
         response.setContentType(MediaType.APPLICATION_JSON.toString());
         //response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        om.writeValue(response.getOutputStream(),message);
+        om.writeValue(response.getOutputStream(), message);
     }
-
 }

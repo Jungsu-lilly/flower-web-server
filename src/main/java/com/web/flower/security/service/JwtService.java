@@ -3,9 +3,13 @@ package com.web.flower.security.service;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.TokenExpiredException;
-import com.web.flower.domain.user.entity.UserEntity;
+import com.web.flower.domain.user.entity.User;
+
+import com.web.flower.security.config.auth.PrincipalDetails;
 import lombok.NoArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.Cookie;
@@ -28,21 +32,21 @@ public class JwtService {
         this.expirationLength = expirationLength;
     }
 
-    public String createAccessToken(UserEntity userEntity){
+    public String createAccessToken(User userEntity){
 
         return JWT.create()
                 .withSubject("access_token") // 토큰이름
-                .withExpiresAt(new Date(System.currentTimeMillis()+ expirationLength*40))
+                .withExpiresAt(new Date(System.currentTimeMillis()+ expirationLength*30))
                 .withClaim("id", userEntity.getId().toString())
                 .withClaim("username", userEntity.getUsername())
                 .sign(Algorithm.HMAC512(secret));
     }
 
-    public String createRefreshToken(UserEntity userEntity){
+    public String createRefreshToken(User userEntity){
 
         return JWT.create()
                 .withSubject("access_token") // 토큰이름
-                .withExpiresAt(new Date(System.currentTimeMillis()+ expirationLength *80))
+                .withExpiresAt(new Date(System.currentTimeMillis()+ expirationLength *45))
                 .withClaim("id", userEntity.getId().toString())
                 .withClaim("username", userEntity.getUsername())
                 .sign(Algorithm.HMAC512(secret));
@@ -71,5 +75,19 @@ public class JwtService {
         String tmp = payload.split(",")[1].split(":")[1];
         String userId = tmp.substring(1, tmp.length() - 1);
         return userId;
+    }
+
+    private void issueNewAccessToken(HttpServletResponse response, User user) {
+        System.out.println("새 AccessToken 발급");
+        String newAccessToken = createAccessToken(user);
+        String jwtToken = createAccessToken(user);
+
+        JwtService.makeCookie(response, jwtToken, 60*30);
+        PrincipalDetails principalDetails = new PrincipalDetails(user);
+
+        UsernamePasswordAuthenticationToken authenticationToken =
+                new UsernamePasswordAuthenticationToken(principalDetails, null,principalDetails.getAuthorities());
+
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
     }
 }

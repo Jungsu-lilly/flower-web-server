@@ -1,11 +1,12 @@
 package com.web.flower.security.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.web.flower.domain.user.entity.UserEntity;
+
+import com.web.flower.domain.user.entity.User;
+import com.web.flower.security.config.auth.PrincipalDetails;
 import com.web.flower.security.domain.RefreshToken;
 import com.web.flower.security.repository.RefreshTokenRepository;
 import com.web.flower.security.service.JwtService;
-import com.web.flower.security.domain.UserEntityDetails;
 import com.web.flower.security.domain.Message;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,7 +37,6 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenRepository refreshTokenRepository;
-
     private final JwtService jwtService;
 
     @Override
@@ -45,12 +45,12 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         try {
             ObjectMapper om = new ObjectMapper();
-            UserEntity userEntity = om.readValue(request.getInputStream(), UserEntity.class);
+            User userEntity = om.readValue(request.getInputStream(), User.class);
 
             UsernamePasswordAuthenticationToken authenticationToken =
                     new UsernamePasswordAuthenticationToken(userEntity.getUsername(), userEntity.getPassword());
 
-            // CustomUserDetailsService 의 loadUserByUsername() 함수 실행 - 인증객체에 사용 정보 담김
+            // PrincipalDetailsService 의 loadUserByUsername() 함수 실행 - 인증객체에 사용 정보 담김
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
             return authentication;
         } catch (IOException e) {
@@ -62,7 +62,8 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
         System.out.println("=== 사용자 인증 성공 ===");
-        UserEntity userEntity = ((UserEntityDetails) authResult.getPrincipal()).getUserEntity();
+        System.out.println("=== successfulAuthentication() ===");
+        User userEntity = ((PrincipalDetails) authResult.getPrincipal()).getUser();
 
         String jwtToken = jwtService.createAccessToken(userEntity);
         String refreshToken = jwtService.createRefreshToken(userEntity);
@@ -79,6 +80,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 .userId(userEntity.getId())
                 .build();
         refreshTokenRepository.save(buildToken);
+        System.out.println("refreshToken = " + refreshToken);
 
         Cookie cookie = new Cookie("Authorization",jwtToken);
         cookie.setMaxAge(60*15); // 15분
@@ -88,7 +90,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-        System.out.println("unsuccessfulAuthentication 실행됨");
+        System.out.println("=== unsuccessfulAuthentication 실행됨 =====");
 
         Object exceptionType = failed.getClass();
 
