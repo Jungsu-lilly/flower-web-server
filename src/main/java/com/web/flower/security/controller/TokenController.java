@@ -1,6 +1,6 @@
 package com.web.flower.security.controller;
 
-import com.web.flower.security.domain.UserEntityDetails;
+import com.web.flower.security.config.auth.PrincipalDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +22,7 @@ public class TokenController {
     // user, manager, admin 접근 가능
     @GetMapping("/api/v1/user")
     public String user(Authentication authentication){
-        UserEntityDetails userEntityDetails = (UserEntityDetails) authentication.getPrincipal();
+        PrincipalDetails userEntityDetails = (PrincipalDetails) authentication.getPrincipal();
         System.out.println("authentication = " + userEntityDetails.getUsername());
         return "user";
     }
