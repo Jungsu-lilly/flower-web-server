@@ -27,10 +27,12 @@ public class UserService {
 
     private final UserDetailsService userDetailsService;
 
-    public String save(UserReqDto reqDto) throws Exception {
-        User user = userRepository.findByUsername(reqDto.getUsername());
+    public void createOne(UserReqDto reqDto) throws Exception {
+        Optional<User> byUsername = userRepository.findByUsername(reqDto.getUsername());
+        if(byUsername.isPresent()){
+            throw new Exception("이미 존재하는 이메일 입니다. 다른 이메일을 입력해주세요");
+        }
 
-        UUID id = UUID.randomUUID();
         String password = passwordEncoder.encode(reqDto.getPassword());
         String userRole = reqDto.getRole();
         if(userRole == null){
@@ -38,20 +40,16 @@ public class UserService {
         }
 
         User userEntity = User.builder()
-                .id(id)
+                .id(UUID.randomUUID())
                 .username(reqDto.getUsername())
                 .password(password)
                 .role(userRole)
+                .profileName(reqDto.getProfileName())
+                .profileAge(reqDto.getProfileAge())
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        try{
-            userRepository.save(userEntity);
-        }
-        catch (Exception e){
-            return "FAIL";
-        }
-        return "SUCCESS";
+        userRepository.save(userEntity);
     }
 
     public UserResDto findById(UUID id){
@@ -67,15 +65,15 @@ public class UserService {
         return UserResListDto.toDto(allUserEntities);
     }
 
-    public String deleteUser(UserReqDto reqDto) throws Exception {
+    public void deleteUser(UserReqDto reqDto) throws Exception {
         String username = reqDto.getUsername();
-        User user = userRepository.findByUsername(reqDto.getUsername());
+        Optional<User> byUsername = userRepository.findByUsername(reqDto.getUsername());
+        User user = byUsername.get();
 
         if(!passwordEncoder.matches(reqDto.getPassword(), user.getPassword())){
             throw new Exception("비밀번호가 맞지 않습니다.");
         }
         userRepository.delete(user);
-        return "SUCCESS";
     }
 
 }

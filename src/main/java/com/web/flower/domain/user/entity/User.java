@@ -26,21 +26,22 @@ public class User {
 
     private String provider;
     private String providerId;
-    private String email;
+
+    private String profileName;
     private int profileAge;
     private String profileImagePath;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     @Builder
-    public User(UUID id, String username, String password, String role, String provider, String providerId, String email, int profileAge, String profileImagePath, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public User(UUID id, String username, String password, String role, String provider, String providerId, String profileName, int profileAge, String profileImagePath, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.role = role;
         this.provider = provider;
         this.providerId = providerId;
-        this.email = email;
+        this.profileName = profileName;
         this.profileAge = profileAge;
         this.profileImagePath = profileImagePath;
         this.createdAt = createdAt;

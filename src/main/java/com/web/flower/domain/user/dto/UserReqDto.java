@@ -12,5 +12,7 @@ public class UserReqDto {
     private UUID id;
     private String username;
     private String password;
+    private String profileName;
+    private int profileAge;
     private String role;
 }

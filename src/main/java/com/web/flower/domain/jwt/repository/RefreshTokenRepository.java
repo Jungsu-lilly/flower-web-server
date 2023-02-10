@@ -1,8 +1,7 @@
-package com.web.flower.security.repository;
+package com.web.flower.domain.jwt.repository;
 
-import com.web.flower.security.domain.RefreshToken;
+import com.web.flower.domain.jwt.entity.RefreshToken;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;

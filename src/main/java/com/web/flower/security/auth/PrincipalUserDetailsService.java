@@ -1,4 +1,4 @@
-package com.web.flower.security.config.auth;
+package com.web.flower.security.auth;
 
 import com.web.flower.domain.user.entity.User;
 import com.web.flower.domain.user.repository.UserRepository;

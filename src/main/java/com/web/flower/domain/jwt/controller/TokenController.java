@@ -1,23 +1,12 @@
-package com.web.flower.security.controller;
+package com.web.flower.domain.jwt.controller;
 
-import com.web.flower.security.config.auth.PrincipalDetails;
+import com.web.flower.security.auth.PrincipalDetails;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController
+@RestController("/token")
 public class TokenController {
-
-    @GetMapping("home")
-    public String home(){
-        return "home";
-    }
-
-    @PostMapping("token")
-    public String token(){
-        return "token";
-    }
 
     // user, manager, admin 접근 가능
     @GetMapping("/api/v1/user")

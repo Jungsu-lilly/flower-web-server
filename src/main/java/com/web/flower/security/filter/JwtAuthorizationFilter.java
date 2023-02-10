@@ -6,12 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.web.flower.domain.user.entity.User;
 import com.web.flower.domain.user.repository.UserRepository;
-import com.web.flower.security.config.auth.PrincipalDetails;
-import com.web.flower.security.config.auth.PrincipalUserDetailsService;
-import com.web.flower.security.domain.RefreshToken;
-import com.web.flower.security.repository.RefreshTokenRepository;
-import com.web.flower.security.service.JwtService;
-import com.web.flower.security.domain.Message;
+import com.web.flower.security.auth.PrincipalDetails;
+import com.web.flower.domain.jwt.entity.RefreshToken;
+import com.web.flower.domain.jwt.repository.RefreshTokenRepository;
+import com.web.flower.domain.jwt.service.JwtService;
+import com.web.flower.domain.message.entity.Message;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,7 +26,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 // 시큐리티가 필터를 가지고 있는데 그 필터중에 BasicAuthenticationFilter 가 있음.
 // 권한이나 인증이 필요한 특정 주소를 요청했을 때 위 필터를 무조건 타게 되어있음
@@ -55,6 +53,8 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
         System.out.println("=== [Authorization Filter] 인증이나 권한이 필요한 주소 요청됨 ===");
 
         Cookie cookie = null;
+        /**
+         * 요청에 엑세스 토큰이 존재하는지 여부 판단. 존재하지 않을 경우 다음 필터로 넘긴다.*/
         try {
             cookie = Arrays.stream(request.getCookies())
                     .filter(r -> r.getName().equals("Authorization"))
@@ -64,6 +64,9 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             chain.doFilter(request, response);
             return;
         }
+
+        /**
+         * 요청에 엑세스토큰 헤더 "Authorization" 이 존재하는 경우 */
         String accessToken = "";
         try{
             accessToken = cookie.getValue();
@@ -72,14 +75,13 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             chain.doFilter(request, response);
             return;
         }
+
         System.out.println("accessToken = " + accessToken);
         boolean isAccessTokenExpired = false;
 
-        String username = null;
         try {
-            username = jwtService.validateToken(accessToken);
+            String username = jwtService.validateToken(accessToken);
         } catch (TokenExpiredException e) {
-            // 엑세스토큰 만료
             System.out.println("=== Access Token Expired ======");
             isAccessTokenExpired = true;
         } catch (SignatureVerificationException e) {
@@ -89,13 +91,14 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
             return;
         }
 
-        System.out.println("username = " + username);
-        User user = userRepository.findByUsername(username);
-
-        if (isAccessTokenExpired) { // 엑세스 토큰이 만료된 경우
+        /**
+         * 엑세스토큰이 만료된 경우 */
+        if (isAccessTokenExpired) {
             System.out.println("엑세스 토큰 만료");
             // 엑세스 토큰에서 userId 추출
             String userId = jwtService.getUserIdFromToken(accessToken);
+            Optional<User> byId = userRepository.findById(UUID.fromString(userId));
+            User user = byId.get();
 
             // userId로 리프레쉬 토큰을 찾는다.
             Optional<RefreshToken> byUserId = refreshTokenRepository.findByUserId(UUID.fromString(userId));
@@ -113,18 +116,24 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
                 chain.doFilter(request, response);
                 return;
             }
-            // 리프레시 토큰이 유효할 때
-            // AccessToken 재발급
+
+            /**
+             * 리프레시 토큰이 유효함. 엑세스토큰 재발급
+             * */
             System.out.println("=== 새 AccessToken 발급 =====");
             String newAccessToken = jwtService.createAccessToken(user);
 
             Cookie resCookie = new Cookie("Authorization", newAccessToken);
-            resCookie.setMaxAge(20); // 20초
+            resCookie.setMaxAge(10); // 20초
             resCookie.setHttpOnly(true);
             response.addCookie(resCookie);
 
             makeResponse(request, response, HttpStatus.OK, "access_token_expired", "엑세스토큰을 재발급합니다.");
         }
+
+        String userId = jwtService.getUserIdFromToken(accessToken);
+        User user = userRepository.findById(UUID.fromString(userId)).get();
+
         PrincipalDetails principalDetails = new PrincipalDetails(user);
 
         UsernamePasswordAuthenticationToken authenticationToken =

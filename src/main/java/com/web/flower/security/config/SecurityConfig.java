@@ -1,26 +1,20 @@
 package com.web.flower.security.config;
 
 import com.web.flower.domain.user.repository.UserRepository;
-import com.web.flower.security.config.oauth.OAuth2SuccessHandler;
-import com.web.flower.security.config.oauth.PrincipalOAuth2UserService;
 import com.web.flower.security.filter.JwtAuthenticationFilter;
 import com.web.flower.security.filter.JwtAuthorizationFilter;
-import com.web.flower.security.provider.JwtAuthenticationProvider;
-import com.web.flower.security.repository.RefreshTokenRepository;
-import com.web.flower.security.service.JwtService;
+import com.web.flower.domain.jwt.repository.RefreshTokenRepository;
+import com.web.flower.domain.jwt.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.factory.PasswordEncoderFactories;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.web.filter.CorsFilter;
@@ -41,14 +35,13 @@ public class SecurityConfig {
     @Autowired
     private AuthenticationSuccessHandler customAuthenticationSuccessHandler;
 
-    @Autowired
-    private OAuth2SuccessHandler oAuth2SuccessHandler;
+//    @Autowired
+//    private OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public BCryptPasswordEncoder encodePwd() {
         return new BCryptPasswordEncoder();
     }
-
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -64,22 +57,21 @@ public class SecurityConfig {
                 .and()
                 .authorizeRequests()
                 .antMatchers("/api/v1/user/**")
-                .access("hasRole('ROLE_USER') or hasRole('ROLE_MANAGER') or hasRole('ROLE_ADMIN')")
+                .access("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
 
                 .antMatchers("/api/v1/admin/**")
                 .access("hasRole('ROLE_ADMIN')")
-                .anyRequest().permitAll()
+                .anyRequest().permitAll();
 //
 //                .and()
 //                .formLogin()
 //                .loginPage("/login")
 //                .loginProcessingUrl("/loginProc")
 //                .defaultSuccessUrl("/")
-                .and()
-                .oauth2Login()
-                .successHandler(oAuth2SuccessHandler);
+//                .and()
+//                .oauth2Login();
+//                .successHandler(oAuth2SuccessHandler);
 //                .loginPage("/login");
-
 
         return http.build();  // SecurityFilterChain 생성
     }

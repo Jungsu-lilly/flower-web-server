@@ -1,10 +1,14 @@
 package com.web.flower.domain.user.controller;
 
+import com.web.flower.domain.message.entity.Message;
 import com.web.flower.domain.user.dto.UserReqDto;
 import com.web.flower.domain.user.dto.UserResDto;
 import com.web.flower.domain.user.dto.UserResListDto;
 import com.web.flower.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.apache.coyote.Response;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.security.auth.login.CredentialException;
@@ -17,34 +21,61 @@ public class UserController {
 
     private final UserService userService;
 
-    @PostMapping("")
-    public String createUser(@RequestBody UserReqDto req){
+    @PostMapping("/one")
+    public ResponseEntity<?> createOne(@RequestBody UserReqDto req){
+        System.out.println("--- 유저 생성 -----");
+        Message message = new Message();
         try {
-            return userService.save(req);
+            userService.createOne(req);
+            message = Message.builder()
+                    .status(HttpStatus.OK)
+                    .message("success")
+                    .build();
         } catch (Exception e) {
-            return e.getMessage();
+            message = Message.builder()
+                    .status(HttpStatus.BAD_REQUEST)
+                    .message(e.getMessage())
+                    .build();
         }
+        return new ResponseEntity<>(message, message.getStatus());
     }
 
-    @GetMapping("")
-    public UserResListDto findAll(){
-        return userService.findAll();
+    @GetMapping("/all")
+    public ResponseEntity<?> searchAll(){
+        UserResListDto all = userService.findAll();
+        Message message = Message.builder()
+                .data(all)
+                .status(HttpStatus.OK)
+                .message("SUCCESS")
+                .build();
+
+        return new ResponseEntity<>(message, message.getStatus());
     }
 
-    @GetMapping("/id")
-    public UserResDto findById(@RequestParam UUID id){
-        return userService.findById(id);
+    @GetMapping("one/id")
+    public ResponseEntity<?> searchOne(@RequestParam UUID id){
+        UserResDto byId = userService.findById(id);
+        Message message = Message.builder()
+                .data(byId)
+                .status(HttpStatus.OK)
+                .message("SUCCESS")
+                .build();
+
+        return new ResponseEntity<>(message, message.getStatus());
     }
 
-    @DeleteMapping("")
-    public String deleteUser(@RequestBody UserReqDto req) throws Exception {
-        String s = null;
-
+    @DeleteMapping("/one")
+    public ResponseEntity<?> deleteUser(@RequestBody UserReqDto req) throws Exception {
         try {
-            s = userService.deleteUser(req);
+            userService.deleteUser(req);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
-        return s;
+        Message message = Message.builder()
+                .status(HttpStatus.OK)
+                .message("SUCCESS")
+                .build();
+
+        return new ResponseEntity<>(message, message.getStatus());
     }
 }

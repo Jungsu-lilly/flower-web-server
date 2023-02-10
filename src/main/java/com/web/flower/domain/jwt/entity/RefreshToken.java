@@ -1,4 +1,4 @@
-package com.web.flower.security.domain;
+package com.web.flower.domain.jwt.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -3,11 +3,11 @@ package com.web.flower.security.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.web.flower.domain.user.entity.User;
-import com.web.flower.security.config.auth.PrincipalDetails;
-import com.web.flower.security.domain.RefreshToken;
-import com.web.flower.security.repository.RefreshTokenRepository;
-import com.web.flower.security.service.JwtService;
-import com.web.flower.security.domain.Message;
+import com.web.flower.security.auth.PrincipalDetails;
+import com.web.flower.domain.jwt.entity.RefreshToken;
+import com.web.flower.domain.jwt.repository.RefreshTokenRepository;
+import com.web.flower.domain.jwt.service.JwtService;
+import com.web.flower.domain.message.entity.Message;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

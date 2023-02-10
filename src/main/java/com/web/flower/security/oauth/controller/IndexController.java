@@ -1,8 +1,8 @@
-package com.web.flower.security.controller;
+package com.web.flower.security.oauth.controller;
 
 import com.web.flower.domain.user.entity.User;
 import com.web.flower.domain.user.repository.UserRepository;
-import com.web.flower.security.config.auth.PrincipalDetails;
+import com.web.flower.security.auth.PrincipalDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.core.Authentication;
