@@ -1,4 +1,4 @@
-package com.web.flower.security.config.oauth.provider;
+package com.web.flower.security.oauth.provider;
 
 import java.util.Map;
 
@@ -21,13 +21,13 @@ public class NaverUserInfo implements OAuth2UserInfo {
     }
 
     @Override
-    public String getEmail() {
-        return (String) attributes.get("email");
+    public String getProfileName() {
+        return (String) attributes.get("name");
     }
 
     @Override
-    public String getUsername() {
-        return (String) attributes.get("name");
+    public String getEmail() {
+        return (String) attributes.get("email");
     }
 
     @Override

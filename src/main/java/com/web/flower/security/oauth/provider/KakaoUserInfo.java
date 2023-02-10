@@ -1,4 +1,4 @@
-package com.web.flower.security.config.oauth.provider;
+package com.web.flower.security.oauth.provider;
 
 import java.util.Map;
 
@@ -29,13 +29,13 @@ public class KakaoUserInfo implements OAuth2UserInfo{
     }
 
     @Override
-    public String getEmail() {
-        return (String)kakaoAccount.get("email");
+    public String getProfileName() {
+        return (String)properties.get("nickname");
     }
 
     @Override
-    public String getUsername() {
-        return (String)profile.get("nickname");
+    public String getEmail() {
+        return (String)kakaoAccount.get("email");
     }
 
     @Override
