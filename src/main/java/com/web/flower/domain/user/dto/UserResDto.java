@@ -1,6 +1,6 @@
 package com.web.flower.domain.user.dto;
 
-import com.web.flower.domain.user.entity.UserEntity;
+import com.web.flower.domain.user.entity.User;
 import lombok.Builder;
 import lombok.Data;
 
@@ -15,7 +15,7 @@ public class UserResDto {
     private String username;
     private LocalDateTime createdAt;
 
-    public static UserResDto toDto(UserEntity userEntity){
+    public static UserResDto toDto(User userEntity){
         return UserResDto.builder()
                 .id(userEntity.getId())
                 .username(userEntity.getUsername())

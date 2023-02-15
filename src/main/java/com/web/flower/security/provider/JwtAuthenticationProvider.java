@@ -1,6 +1,6 @@
 package com.web.flower.security.provider;
 
-import com.web.flower.security.domain.UserEntityDetails;
+import com.web.flower.security.auth.PrincipalDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -8,21 +8,17 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import javax.transaction.Transactional;
 
 public class JwtAuthenticationProvider implements AuthenticationProvider {
 
     @Autowired
-    public PasswordEncoder passwordEncoder;
+    public BCryptPasswordEncoder passwordEncoder;
 
     @Autowired
     public UserDetailsService userDetailsService;
-
-    public JwtAuthenticationProvider(PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
-    }
 
     @Override
     @Transactional
@@ -31,12 +27,12 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
         String username = authentication.getName();
         String password = (String) authentication.getCredentials();
 
-        UserEntityDetails userEntityDetails = (UserEntityDetails) userDetailsService.loadUserByUsername(username);
-        if(!passwordEncoder.matches(password, userEntityDetails.getPassword())){
+        PrincipalDetails principalDetails = (PrincipalDetails) userDetailsService.loadUserByUsername(username);
+        if(!passwordEncoder.matches(password, principalDetails.getPassword())){
             throw new BadCredentialsException("Invalid Password!");
         }
 
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userEntityDetails, null, userEntityDetails.getAuthorities());
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(principalDetails, null, principalDetails.getAuthorities());
         return authenticationToken;
     }
 

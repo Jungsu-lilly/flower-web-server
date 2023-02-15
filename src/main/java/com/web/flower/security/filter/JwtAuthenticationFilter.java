@@ -1,15 +1,14 @@
 package com.web.flower.security.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.web.flower.domain.user.entity.UserEntity;
-import com.web.flower.security.JwtProperties;
-import com.web.flower.security.domain.RefreshToken;
-import com.web.flower.security.repository.RefreshTokenRepository;
-import com.web.flower.security.service.JwtService;
-import com.web.flower.security.domain.UserEntityDetails;
-import com.web.flower.security.domain.Message;
+
+import com.web.flower.domain.user.entity.User;
+import com.web.flower.security.auth.PrincipalDetails;
+import com.web.flower.domain.jwt.entity.RefreshToken;
+import com.web.flower.domain.jwt.repository.RefreshTokenRepository;
+import com.web.flower.domain.jwt.service.JwtService;
+import com.web.flower.domain.message.entity.Message;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,7 +26,6 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,19 +37,20 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final JwtService jwtService;
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-        System.out.println("JwtAuthenticationFilter: 로그인 요청 도착");
+        System.out.println("=== [AuthenticationFilter] 인증(로그인) 요청 도착 ===");
 
         try {
             ObjectMapper om = new ObjectMapper();
-            UserEntity userEntity = om.readValue(request.getInputStream(), UserEntity.class);
+            User userEntity = om.readValue(request.getInputStream(), User.class);
 
             UsernamePasswordAuthenticationToken authenticationToken =
                     new UsernamePasswordAuthenticationToken(userEntity.getUsername(), userEntity.getPassword());
 
-            // CustomUserDetailsService 의 loadUserByUsername() 함수 실행 - 인증객체에 사용 정보 담김
+            // PrincipalDetailsService 의 loadUserByUsername() 함수 실행 - 인증객체에 사용 정보 담김
             Authentication authentication = authenticationManager.authenticate(authenticationToken);
             return authentication;
         } catch (IOException e) {
@@ -62,15 +61,15 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     // attemptAuthentication 실행 후, 인증이 정상적으로 되었다면 successfulAuthentication 함수가 실행된다.
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        System.out.println("successfulAuthentication 실행");
-        UserEntity userEntity = ((UserEntityDetails) authResult.getPrincipal()).getUserEntity();
+        System.out.println("=== 사용자 인증 성공 ===");
+        System.out.println("=== successfulAuthentication() ===");
+        User userEntity = ((PrincipalDetails) authResult.getPrincipal()).getUser();
 
-        String jwtToken = JwtService.createAccessToken(userEntity);
-        String refreshToken = JwtService.createRefreshToken(userEntity);
+        String jwtToken = jwtService.createAccessToken(userEntity);
+        String refreshToken = jwtService.createRefreshToken(userEntity);
 
         // refresh Token DB에 저장. 이미 존재하는 RefreshToken 이 있다면, 제거 후 생성
         Optional<RefreshToken> findToken = refreshTokenRepository.findByUserId(userEntity.getId());
-
         if(findToken.isPresent()){
             refreshTokenRepository.delete(findToken.get());
         }
@@ -81,16 +80,17 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 .userId(userEntity.getId())
                 .build();
         refreshTokenRepository.save(buildToken);
+        System.out.println("refreshToken = " + refreshToken);
 
         Cookie cookie = new Cookie("Authorization",jwtToken);
-        cookie.setMaxAge(60*30); // 30분
+        cookie.setMaxAge(60*15); // 15분
         cookie.setHttpOnly(true);
         response.addCookie(cookie);
     }
 
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-        System.out.println("unsuccessfulAuthentication 실행됨");
+        System.out.println("=== unsuccessfulAuthentication 실행됨 =====");
 
         Object exceptionType = failed.getClass();
 
