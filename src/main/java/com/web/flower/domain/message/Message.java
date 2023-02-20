@@ -1,4 +1,4 @@
-package com.web.flower.domain.message.entity;
+package com.web.flower.domain.message;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

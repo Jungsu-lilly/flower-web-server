@@ -7,7 +7,7 @@ import com.web.flower.security.auth.PrincipalDetails;
 import com.web.flower.domain.jwt.entity.RefreshToken;
 import com.web.flower.domain.jwt.repository.RefreshTokenRepository;
 import com.web.flower.domain.jwt.service.JwtService;
-import com.web.flower.domain.message.entity.Message;
+import com.web.flower.domain.message.Message;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -32,12 +32,18 @@ import java.util.UUID;
 // 스프링 시큐리티에서 UsernamePasswordAuthenticationFilter 가 있다.
 // /login 요청해서 username, password POST 전송하면 위 필터가 동작한다.
 // 현재는 formLogin disable 했기 때문에 작동하지 않음.
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
+
+    public JwtAuthenticationFilter(AuthenticationManager authenticationManager, RefreshTokenRepository refreshTokenRepository, JwtService jwtService) {
+        this.authenticationManager = authenticationManager;
+        this.refreshTokenRepository = refreshTokenRepository;
+        this.jwtService = jwtService;
+        setFilterProcessesUrl("/login");
+    }
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
@@ -86,6 +92,16 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         cookie.setMaxAge(60*15); // 15분
         cookie.setHttpOnly(true);
         response.addCookie(cookie);
+
+        Message message = Message.builder()
+                .status(HttpStatus.OK)
+                .message("success")
+                .memo("로그인 성공!")
+                .build();
+
+        ObjectMapper om = new ObjectMapper();
+        response.setContentType(MediaType.APPLICATION_JSON.toString());
+        om.writeValue(response.getOutputStream(), message);
     }
 
     @Override

@@ -46,7 +46,7 @@ public class OauthService {
 
     @Transactional
     public LoginResponse login(String providerName, String code){
-        System.out.println("--- OauthService login 실행 -----");
+        System.out.println("--- OauthService: login() 실행 -----");
         ClientRegistration provider = clientRegistrationRepository.findByRegistrationId(providerName);
         // code -> access token 으로 인가서버에 교환요청
         OAuthTokenResponse tokenResponse = getToken(code, provider);
@@ -62,13 +62,10 @@ public class OauthService {
                 .block();
 
         System.out.println("userAttributes = " + userAttributes);
-
         OAuth2UserInfo oauth2UserInfo = null;
 
         if(providerName.equals("kakao")){
             oauth2UserInfo = new KakaoUserInfo(userAttributes);
-        }else if(providerName.equals("naver")){
-            oauth2UserInfo = new NaverUserInfo(userAttributes);
         }else{
             log.info("허용되지 않은 접근입니다.");
         }
@@ -77,8 +74,8 @@ public class OauthService {
         String providerId = oauth2UserInfo.getProviderId();
 
         // oauth로 로그인하면 사실 username, password는 의미없음. 그냥 만들어주는것
-        String username = providerName +"_"+oauth2UserInfo.getEmail(); // kakao_wjdtb1235@naver.com
-        String password = bCryptPasswordEncoder.encode("꽃물");
+        String username = providerName +"_"+oauth2UserInfo.getProviderId(); // kakao_123452134qwewe123123
+        String password = UUID.randomUUID().toString();
 
         // 이미 존재하는 회원인지 체크
         Optional<User> byUsername = userRepository.findByUsername(username);
@@ -102,7 +99,7 @@ public class OauthService {
         }
 
         // 새로운 access, refresh token 생성
-        String accessToken1 = jwtService.createAccessToken(userEntity);
+        String accessToken = jwtService.createAccessToken(userEntity);
         String refreshToken = jwtService.createRefreshToken(userEntity);
 
         Optional<RefreshToken> byUserId = refreshTokenRepository.findByUserId(userEntity.getId());
@@ -124,7 +121,7 @@ public class OauthService {
                 .imageUrl(userEntity.getProfileImagePath())
                 .role(userEntity.getRole())
                 .tokenType(BEARER_TYPE)
-                .accessToken(accessToken1)
+                .accessToken(accessToken)
                 .build();
     }
 

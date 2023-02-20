@@ -27,35 +27,30 @@ public class UserService {
 
     private final UserDetailsService userDetailsService;
 
-    public void createOne(UserReqDto reqDto) throws Exception {
-        Optional<User> byUsername = userRepository.findByUsername(reqDto.getUsername());
+    public void createOne(UserReqDto.ReqSignUp req) throws Exception {
+        Optional<User> byUsername = userRepository.findByUsername(req.getUsername());
         if(byUsername.isPresent()){
             throw new Exception("이미 존재하는 이메일 입니다. 다른 이메일을 입력해주세요");
         }
 
-        String password = passwordEncoder.encode(reqDto.getPassword());
-        String userRole = reqDto.getRole();
-        if(userRole == null){
-            userRole = "ROLE_USER";
-        }
+        String password = passwordEncoder.encode(req.getPassword());
 
         User userEntity = User.builder()
                 .id(UUID.randomUUID())
-                .username(reqDto.getUsername())
+                .username(req.getUsername())
                 .password(password)
-                .role(userRole)
-                .profileName(reqDto.getProfileName())
-                .profileAge(reqDto.getProfileAge())
+                .profileName(req.getProfileName())
+                .role("ROLE_USER")
                 .createdAt(LocalDateTime.now())
                 .build();
 
         userRepository.save(userEntity);
     }
 
-    public UserResDto findById(UUID id){
+    public UserResDto findById(UUID id) throws Exception {
         Optional<User> findUser = userRepository.findById(id);
         if(!findUser.isPresent()){
-            throw new NoSuchElementException("찾으려는 유저가 없습니다.");
+            throw new Exception("찾으려는 유저가 없습니다.");
         }
         return UserResDto.toDto(findUser.get());
     }
@@ -65,15 +60,17 @@ public class UserService {
         return UserResListDto.toDto(allUserEntities);
     }
 
-    public void deleteUser(UserReqDto reqDto) throws Exception {
-        String username = reqDto.getUsername();
-        Optional<User> byUsername = userRepository.findByUsername(reqDto.getUsername());
-        User user = byUsername.get();
-
-        if(!passwordEncoder.matches(reqDto.getPassword(), user.getPassword())){
-            throw new Exception("비밀번호가 맞지 않습니다.");
+    public void deleteUser(UserReqDto.ReqDeleteOne req) throws Exception {
+        Optional<User> byUsername = userRepository.findByUsername(req.getUsername());
+        if(!byUsername.isPresent()){
+            throw new Exception("유저가 존재하지 않습니다. userId 확인요망");
         }
-        userRepository.delete(user);
+        User user = byUsername.get();
+        if(passwordEncoder.matches(req.getPassword(), user.getPassword())){
+            userRepository.delete(user);
+        }else{
+            throw new Exception("username, password 가 일치하지 않습니다. 다시 한 번 확인해주세요.");
+        }
     }
 
 }

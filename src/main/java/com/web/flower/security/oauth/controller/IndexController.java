@@ -75,24 +75,4 @@ public class IndexController {
 		return "매니저 페이지입니다.";
 	}
 
-	@GetMapping("/login")
-	public String login() {
-		return "login";
-	}
-
-	@GetMapping("/join")
-	public String join() {
-		return "join";
-	}
-
-	@PostMapping("/joinProc")
-	public String joinProc(User user) {
-		System.out.println("회원가입 진행 : " + user);
-		String rawPassword = user.getPassword();
-		String encPassword = bCryptPasswordEncoder.encode(rawPassword);
-		user.setPassword(encPassword);
-		user.setRole("ROLE_USER");
-		userRepository.save(user);
-		return "redirect:/";
-	}
 }
