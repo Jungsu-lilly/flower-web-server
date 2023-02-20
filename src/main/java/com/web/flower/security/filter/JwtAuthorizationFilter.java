@@ -10,7 +10,7 @@ import com.web.flower.security.auth.PrincipalDetails;
 import com.web.flower.domain.jwt.entity.RefreshToken;
 import com.web.flower.domain.jwt.repository.RefreshTokenRepository;
 import com.web.flower.domain.jwt.service.JwtService;
-import com.web.flower.domain.message.entity.Message;
+import com.web.flower.domain.message.Message;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -125,6 +125,7 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
             Cookie resCookie = new Cookie("Authorization", newAccessToken);
             resCookie.setMaxAge(10); // 20초
+            resCookie.setPath("/");
             resCookie.setHttpOnly(true);
             response.addCookie(resCookie);
 

@@ -36,7 +36,7 @@ public class JwtService {
 
         return JWT.create()
                 .withSubject("access_token") // 토큰이름
-                .withExpiresAt(new Date(System.currentTimeMillis()+ expirationLength*30))
+                .withExpiresAt(new Date(System.currentTimeMillis()+ expirationLength*60*10)) // 10분
                 .withClaim("id", userEntity.getId().toString())
                 .withClaim("username", userEntity.getUsername())
                 .sign(Algorithm.HMAC512(secret));
@@ -45,8 +45,8 @@ public class JwtService {
     public String createRefreshToken(User userEntity){
 
         return JWT.create()
-                .withSubject("access_token") // 토큰이름
-                .withExpiresAt(new Date(System.currentTimeMillis()+ expirationLength *45))
+                .withSubject("refresh_token") // 토큰이름
+                .withExpiresAt(new Date(System.currentTimeMillis()+ expirationLength*60*1440)) // 1일
                 .withClaim("id", userEntity.getId().toString())
                 .withClaim("username", userEntity.getUsername())
                 .sign(Algorithm.HMAC512(secret));

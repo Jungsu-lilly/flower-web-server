@@ -14,5 +14,21 @@ public class UserReqDto {
     private String password;
     private String profileName;
     private int profileAge;
-    private String role;
+
+    @Builder
+    @Data
+    public static class ReqSignUp{
+        private String username;
+        private String password;
+        private String profileName;
+        private int profileAge;
+    }
+
+    @Builder
+    @Data
+    public static class ReqDeleteOne{
+        private String username;
+        private String password;
+    }
+
 }

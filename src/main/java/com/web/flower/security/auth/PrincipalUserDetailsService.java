@@ -21,8 +21,9 @@ public class PrincipalUserDetailsService implements UserDetailsService {
 
         System.out.println("=== PrincipalUserDetailsService : loadUserByUsername() =========");
         Optional<User> byUsername = userRepository.findByUsername(username);
-//        List<GrantedAuthority> roles = new ArrayList<>();
-//        roles.add(new SimpleGrantedAuthority(user.getRole()));
+        if(!byUsername.isPresent()){
+            throw new UsernameNotFoundException("해당 유저가 존재하지 않습니다.");
+        }
 
         User user = byUsername.get();
         System.out.println("user.getUsername() = " + user.getUsername());

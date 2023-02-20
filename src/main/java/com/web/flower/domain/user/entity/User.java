@@ -1,5 +1,6 @@
 package com.web.flower.domain.user.entity;
 
+import com.web.flower.domain.flower_test_result.entity.FlowerTestResult;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,6 +9,7 @@ import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,35 +24,35 @@ public class User {
     private UUID id;
     private String username;
     private String password;
-    private String role;
-
     private String provider;
     private String providerId;
-
+    private String role;
     private String profileName;
-    private int profileAge;
     private String profileImagePath;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
+    private List<FlowerTestResult> flowerTestResults = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
+    private List<com.web.flower.domain.flower_select_result.entity.FlowerSelectResult> flowerSelectResults = new ArrayList<>();
+
     @Builder
-    public User(UUID id, String username, String password, String role, String provider, String providerId, String profileName, int profileAge, String profileImagePath, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public User(UUID id, String username, String password, String provider, String providerId, String profileName, String role, String profileImagePath, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.username = username;
         this.password = password;
-        this.role = role;
         this.provider = provider;
         this.providerId = providerId;
+        this.role = role;
         this.profileName = profileName;
-        this.profileAge = profileAge;
         this.profileImagePath = profileImagePath;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
 
     public void setPassword(String password){this.password = password;}
-
-    public void setRole(String role){this.role = role;}
 
     @Override
     public String toString() {
