@@ -35,9 +35,6 @@ public class SecurityConfig {
     @Autowired
     private AuthenticationSuccessHandler customAuthenticationSuccessHandler;
 
-//    @Autowired
-//    private OAuth2SuccessHandler oAuth2SuccessHandler;
-
     @Bean
     public BCryptPasswordEncoder encodePwd() {
         return new BCryptPasswordEncoder();
@@ -57,21 +54,8 @@ public class SecurityConfig {
                 .and()
                 .authorizeRequests()
                 .antMatchers("/api/v1/user/**")
-                .access("hasRole('ROLE_USER') or hasRole('ROLE_ADMIN')")
-
-                .antMatchers("/api/v1/admin/**")
-                .access("hasRole('ROLE_ADMIN')")
+                .access("hasRole('ROLE_USER')")
                 .anyRequest().permitAll();
-//
-//                .and()
-//                .formLogin()
-//                .loginPage("/login")
-//                .loginProcessingUrl("/loginProc")
-//                .defaultSuccessUrl("/")
-//                .and()
-//                .oauth2Login();
-//                .successHandler(oAuth2SuccessHandler);
-//                .loginPage("/login");
 
         return http.build();  // SecurityFilterChain 생성
     }
