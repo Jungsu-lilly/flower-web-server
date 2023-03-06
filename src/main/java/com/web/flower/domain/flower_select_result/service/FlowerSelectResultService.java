@@ -6,13 +6,12 @@ import com.web.flower.domain.flower_select_result.entity.FlowerSelectResult;
 import com.web.flower.domain.flower_select_result.repository.FlowerSelectResultRepository;
 import com.web.flower.domain.user.entity.User;
 import com.web.flower.domain.user.repository.UserRepository;
-import lombok.AllArgsConstructor;
+import com.web.flower.utils.SecurityContextHolderUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -21,8 +20,9 @@ public class FlowerSelectResultService {
     private final FlowerSelectResultRepository flowerSelectResultRepository;
     private final UserRepository userRepository;
 
-    public void createOne(FlowerSelectResultReqDto.ReqCreate req, String username) throws Exception {
-
+    public void createOne(FlowerSelectResultReqDto.ReqCreate req) throws Exception {
+        String username = SecurityContextHolderUtils.getUsername();
+        
         Optional<User> byId = userRepository.findByUsername(username);
         if(!byId.isPresent()){
             throw new Exception("유저가 존재하지 않습니다. userId 확인요망");
@@ -41,34 +41,41 @@ public class FlowerSelectResultService {
                 .id(UUID.randomUUID())
                 .user(user)
                 .flowerNum(req.getFlowerNum())
+                .createdAt(LocalDateTime.now())
                 .build();
         flowerSelectResultRepository.save(flowerSelectResult);
     }
 
-    public FlowerSelectResultResDto.ResFlowerList searchListByUser(String username) throws Exception {
-        Optional<User> byUsername = userRepository.findByUsername(username);
-        if(!byUsername.isPresent()){
+    public List<FlowerSelectResultResDto> searchListByUser() throws Exception {
+        String username = SecurityContextHolderUtils.getUsername();
+
+        Optional<User> findUser = userRepository.findByUsername(username);
+        if(!findUser.isPresent()){
             throw new Exception("유저가 존재하지 않습니다. userId 확인 요망");
         }
-        User user = byUsername.get();
         List<FlowerSelectResult> flowerSelectResults = flowerSelectResultRepository.findByUsername(username);
 
-        FlowerSelectResultResDto.ResFlowerList resFlowerList = FlowerSelectResultResDto.toResFlowerList(flowerSelectResults);
+        Comparator<FlowerSelectResult> comparator = (f1, f2) -> Integer.valueOf(
+                f2.getCreatedAt().compareTo(f1.getCreatedAt())
+        );
+        Collections.sort(flowerSelectResults, comparator);
+        List<FlowerSelectResultResDto> resFlowerList = FlowerSelectResultResDto.toDto(flowerSelectResults);
+
         return resFlowerList;
     }
 
-    public void deleteOne(String username, int flowerNum) throws Exception {
-        Optional<User> byUsername = userRepository.findByUsername(username);
-        if(!byUsername.isPresent()){
+    public void deleteOne(UUID id) throws Exception {
+        String username = SecurityContextHolderUtils.getUsername();
+        Optional<User> findUser = userRepository.findByUsername(username);
+        if(!findUser.isPresent()){
             throw new Exception("유저가 존재하지 않습니다. userId 확인 요망");
         }
-        User user = byUsername.get();
 
-        Optional<FlowerSelectResult> byUserAndFlowerNum = flowerSelectResultRepository.findByUserAndFlowerNum(username, flowerNum);
-        if(!byUserAndFlowerNum.isPresent()){
+        Optional<FlowerSelectResult> findFlowerSelectResult = flowerSelectResultRepository.findById(id);
+        if(!findFlowerSelectResult.isPresent()){
             throw new Exception("유저아이디와 꽃 번호를 다시 한번 확인해주세요.");
         }
-        FlowerSelectResult flowerSelectResult = byUserAndFlowerNum.get();
+        FlowerSelectResult flowerSelectResult = findFlowerSelectResult.get();
         flowerSelectResultRepository.delete(flowerSelectResult);
     }
 }
