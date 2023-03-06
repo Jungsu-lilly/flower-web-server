@@ -5,11 +5,10 @@ import com.web.flower.domain.message.Message;
 import com.web.flower.domain.social_login.dto.LoginResponse;
 import com.web.flower.domain.social_login.dto.SocialLoginReqDto;
 import com.web.flower.domain.social_login.service.SocialLoginService;
+import com.web.flower.utils.CookieUtils;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseCookie;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -50,14 +49,7 @@ public class SocialLoginController {
                 .build();
 
         String accessToken = loginResponse.getAccessToken();
-
-        ResponseCookie cookie = ResponseCookie.from("flower_token", accessToken)
-                .httpOnly(true)
-                .domain("localhost")
-                .path("/")
-                .maxAge(60 * 60 * 1) // 1시간
-                .build();
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        CookieUtils.makeCookie(accessToken, response);
 
         om.writeValue(response.getOutputStream(), message);
     }

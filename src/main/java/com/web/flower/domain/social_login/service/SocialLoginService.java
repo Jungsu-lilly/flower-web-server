@@ -9,7 +9,7 @@ import com.web.flower.domain.social_login.provider.KakaoUserInfo;
 import com.web.flower.domain.social_login.provider.OAuth2UserInfo;
 import com.web.flower.domain.refresh_token.entity.RefreshToken;
 import com.web.flower.domain.refresh_token.repository.RefreshTokenRepository;
-import com.web.flower.domain.refresh_token.service.JwtService;
+import com.web.flower.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -41,7 +41,7 @@ public class SocialLoginService {
     
     private final RefreshTokenRepository refreshTokenRepository;
 
-    private final JwtService jwtService;
+    private final JwtUtils jwtUtils;
 
     @Transactional
     public LoginResponse socialLogin(SocialLoginReqDto req){
@@ -97,8 +97,8 @@ public class SocialLoginService {
         }
 
         // 새로운 access, refresh token 생성
-        String accessToken = jwtService.createAccessToken(userEntity);
-        String refreshToken = jwtService.createRefreshToken(userEntity);
+        String accessToken = jwtUtils.createAccessToken(userEntity);
+        String refreshToken = jwtUtils.createRefreshToken(userEntity);
 
         Optional<RefreshToken> byUserId = refreshTokenRepository.findByUserId(userEntity.getId());
         if(byUserId.isPresent()){ // 해당 사용자의 리프레쉬 토큰이 이미 있다면 삭제한다.

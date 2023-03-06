@@ -1,7 +1,7 @@
 package com.web.flower.security.config;
 
 import com.web.flower.domain.refresh_token.repository.RefreshTokenRepository;
-import com.web.flower.domain.refresh_token.service.JwtService;
+import com.web.flower.utils.JwtUtils;
 import com.web.flower.domain.user.repository.UserRepository;
 import com.web.flower.security.auth.JwtAuthenticationFilter;
 import com.web.flower.security.auth.JwtAuthenticationProvider;
@@ -29,7 +29,7 @@ public class SecurityConfig {
     private final PrincipalUserDetailsService principalUserDetailsService;
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
-    private final JwtService jwtService;
+    private final JwtUtils jwtUtils;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -79,7 +79,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(AuthenticationManager authenticationManager) {
-        JwtAuthenticationFilter authenticationFilter = new JwtAuthenticationFilter(authenticationManager, refreshTokenRepository, jwtService);
+        JwtAuthenticationFilter authenticationFilter = new JwtAuthenticationFilter(authenticationManager, refreshTokenRepository, jwtUtils);
         authenticationFilter.setAuthenticationManager(authenticationManager);
 
         SecurityContextRepository contextRepository = new HttpSessionSecurityContextRepository();
@@ -90,7 +90,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthorizationFilter jwtAuthorizationFilter(AuthenticationManager authenticationManager) {
-        JwtAuthorizationFilter authorizationFilter = new JwtAuthorizationFilter(authenticationManager, userRepository, refreshTokenRepository, jwtService);
+        JwtAuthorizationFilter authorizationFilter = new JwtAuthorizationFilter(authenticationManager, userRepository, refreshTokenRepository, jwtUtils);
         return authorizationFilter;
     }
 }

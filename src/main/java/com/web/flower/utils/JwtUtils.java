@@ -1,66 +1,65 @@
-//package com.web.flower.utils;
-//
-//import com.web.flower.domain.user.entity.User;
-//import io.jsonwebtoken.Jwts;
-//import io.jsonwebtoken.SignatureAlgorithm;
-//import io.jsonwebtoken.io.Decoders;
-//import io.jsonwebtoken.security.Keys;
-//import lombok.NoArgsConstructor;
-//import org.springframework.stereotype.Component;
-//
-//import java.security.Key;
-//import java.util.Date;
-//import java.util.HashMap;
-//import java.util.Map;
-//import java.util.UUID;
-//
-//@Component
-//@NoArgsConstructor
-//public class JwtUtils {
-//
-//    private static long TOKEN_VALIDITY_IN_SECOND = 1000;
-//    private static long ACCESS_TOKEN_VALIDITY_TIME = TOKEN_VALIDITY_IN_SECOND * 60 * 15;
-//    private static long REFRESH_TOKEN_VALIDITY_TIME = TOKEN_VALIDITY_IN_SECOND * 60 * 60 * 24 * 3;
-//
-//    public static String createAccessToken(User user, UUID refreshTokenId) {
-//        return Jwts.builder()
-//                .setSubject("access_token")
-//                .setClaims(createAccessTokenClaims(user, refreshTokenId))
-//                .setExpiration(createTokenExpiration(ACCESS_TOKEN_VALIDITY_TIME))
-//                .signWith(createSigningKey(AuthProperties.getAccessSecret()), SignatureAlgorithm.HS256)
-//                .compact();
-//    }
-//
-//    public static String createRefreshToken(User user) {
-//        return Jwts.builder()
-//                .setSubject("refresh_token")
-//                .setClaims(createRefreshTokenClaims(user))
-//                .setExpiration(createTokenExpiration(REFRESH_TOKEN_VALIDITY_TIME))
-//                .signWith(createSigningKey(AuthProperties.getRefreshSecret()), SignatureAlgorithm.HS256)
-//                .compact();
-//    }
-//
-//    private static Date createTokenExpiration(long expirationTime) {
-//        Date expiration = new Date(System.currentTimeMillis() + expirationTime);
-//        return expiration;
-//    }
-//
-//    private static Key createSigningKey(String tokenSecret) {
-//        byte[] keyBytes = Decoders.BASE64.decode(tokenSecret);
-//        return Keys.hmacShaKeyFor(keyBytes);
-//    }
-//
-//    // 인가 필터 - access token 만료 시 refresh token의 유효성을 쉽게 조회하기 위해 refresh token id도 함께 넣어준다
-//    private static Map<String, Object> createAccessTokenClaims(User user, UUID refreshTokenId) {
-//        Map<String, Object> map = new HashMap<>();
-//        map.put("username", user.getUsername());
-//        map.put("refreshTokenId", refreshTokenId);
-//        return map;
-//    }
-//
-//    private static Map<String, Object> createRefreshTokenClaims(User user) {
-//        Map<String, Object> map = new HashMap<>();
-//        map.put("username", user.getUsername());
-//        return map;
-//    }
-//}
+package com.web.flower.utils;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.TokenExpiredException;
+import com.web.flower.domain.user.entity.User;
+import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.util.Base64;
+import java.util.Date;
+
+@Component
+@NoArgsConstructor
+public class JwtUtils {
+
+    @Value("${flower.app.jwt.secret.key}")
+    private String secret;
+
+    private long expirationLength = 1000L;
+
+    public JwtUtils(@Value("${flower.app.jwt.secret.key}") String secret) {
+        this.secret = secret;
+    }
+
+    public String createAccessToken(User userEntity){
+
+        return JWT.create()
+                .withSubject("access_token") // 토큰이름
+                .withExpiresAt(new Date(System.currentTimeMillis()+ expirationLength*60*15)) // 15분
+                .withClaim("id", userEntity.getId().toString())
+                .withClaim("username", userEntity.getUsername())
+                .sign(Algorithm.HMAC512(secret));
+    }
+
+    public String createRefreshToken(User userEntity){
+
+        return JWT.create()
+                .withSubject("refresh_token") // 토큰이름
+                .withExpiresAt(new Date(System.currentTimeMillis()+ expirationLength*60*60*24*3)) // 3일
+                .withClaim("id", userEntity.getId().toString())
+                .withClaim("username", userEntity.getUsername())
+                .sign(Algorithm.HMAC512(secret));
+    }
+
+    public String validateToken(String token) throws TokenExpiredException {
+        String username = JWT.require(Algorithm.HMAC512(secret)).build()
+                .verify(token)
+                .getClaim("username").asString();
+        return username;
+    }
+
+    public String getUserIdFromToken(String token){
+        String[] chunks = token.split("\\.");
+
+        Base64.Decoder decoder = Base64.getUrlDecoder();
+        String payload = new String(decoder.decode(chunks[1]));
+
+        String tmp = payload.split(",")[1].split(":")[1];
+        String userId = tmp.substring(1, tmp.length() - 1);
+        return userId;
+    }
+
+}

@@ -1,7 +1,7 @@
 package com.web.flower.domain.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.web.flower.domain.refresh_token.service.JwtService;
+import com.web.flower.utils.JwtUtils;
 import com.web.flower.domain.message.Message;
 import com.web.flower.domain.user.dto.UserReqDto;
 import com.web.flower.domain.user.service.UserService;
@@ -21,7 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 public class UserController {
 
     private final UserService userService;
-    private final JwtService jwtService;
+    private final JwtUtils jwtUtils;
 
     @PostMapping("/one")
     public ResponseEntity<?> createOne(@RequestBody UserReqDto.ReqSignUp req){
