@@ -1,33 +1,28 @@
-package com.web.flower.security.provider;
+package com.web.flower.security.auth;
 
-import com.web.flower.security.auth.PrincipalDetails;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import javax.transaction.Transactional;
 
+@RequiredArgsConstructor
 public class JwtAuthenticationProvider implements AuthenticationProvider {
 
-    @Autowired
-    public BCryptPasswordEncoder passwordEncoder;
-
-    @Autowired
-    public UserDetailsService userDetailsService;
+    private final PrincipalUserDetailsService principalUserDetailsService;
+    private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        System.out.println("=== FormAuthenticationProvider 실행 ===");
         String username = authentication.getName();
         String password = (String) authentication.getCredentials();
 
-        PrincipalDetails principalDetails = (PrincipalDetails) userDetailsService.loadUserByUsername(username);
+        PrincipalDetails principalDetails = (PrincipalDetails) principalUserDetailsService.loadUserByUsername(username);
         if(!passwordEncoder.matches(password, principalDetails.getPassword())){
             throw new BadCredentialsException("Invalid Password!");
         }

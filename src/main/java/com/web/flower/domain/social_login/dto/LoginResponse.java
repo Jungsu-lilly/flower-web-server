@@ -1,4 +1,4 @@
-package com.web.flower.security.oauth.dto;
+package com.web.flower.domain.social_login.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

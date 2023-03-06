@@ -1,4 +1,4 @@
-package com.web.flower.domain.jwt.entity;
+package com.web.flower.domain.refresh_token.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

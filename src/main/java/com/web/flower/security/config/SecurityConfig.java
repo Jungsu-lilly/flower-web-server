@@ -1,74 +1,96 @@
 package com.web.flower.security.config;
 
+import com.web.flower.domain.refresh_token.repository.RefreshTokenRepository;
+import com.web.flower.utils.JwtUtils;
 import com.web.flower.domain.user.repository.UserRepository;
-import com.web.flower.security.filter.JwtAuthenticationFilter;
-import com.web.flower.security.filter.JwtAuthorizationFilter;
-import com.web.flower.domain.jwt.repository.RefreshTokenRepository;
-import com.web.flower.domain.jwt.service.JwtService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.web.flower.security.auth.JwtAuthenticationFilter;
+import com.web.flower.security.auth.JwtAuthenticationProvider;
+import com.web.flower.security.auth.JwtAuthorizationFilter;
+import com.web.flower.security.auth.PrincipalUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.web.filter.CorsFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true, securedEnabled = true) // 특정 주소 접근시 권한 및 인증을 위한 어노테이션 활성화
+@RequiredArgsConstructor
 public class SecurityConfig {
-
-    @Autowired private CorsFilter corsFilter;
-
-    @Autowired private UserRepository userRepository;
-
-    @Autowired private RefreshTokenRepository refreshTokenRepository;
-
-    @Autowired private JwtService jwtService;
-
-    @Autowired
-    private AuthenticationSuccessHandler customAuthenticationSuccessHandler;
+    private final PrincipalUserDetailsService principalUserDetailsService;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final UserRepository userRepository;
+    private final JwtUtils jwtUtils;
 
     @Bean
-    public BCryptPasswordEncoder encodePwd() {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        AuthenticationManager authenticationManager = authenticationManager(http.getSharedObject(AuthenticationConfiguration.class));
+        JwtAuthenticationFilter jwtAuthenticationFilter = jwtAuthenticationFilter(authenticationManager);
+        JwtAuthorizationFilter jwtAuthorizationFilter = jwtAuthorizationFilter(authenticationManager);
+
+        http
+                .cors().disable()
+                .csrf().disable()
+                .formLogin().disable()
+                .httpBasic().disable()
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);    // jwt사용으로 세션관리 해제
+
+        http
+                .headers().frameOptions().sameOrigin();
+
+        http
+                .authorizeRequests()
+                .antMatchers("/api/social-login/**", "/api/login", "/api/user/one", "/api/user/logout")
+                .permitAll()
+                .antMatchers("/api/**")
+                .access("hasRole('ROLE_USER')")
+                .anyRequest().permitAll();
+
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(jwtAuthorizationFilter, JwtAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
-        http
-                .csrf().disable()
-                // 세션을 사용하지 않겠다. -> 세션 stateless 서버로 만들겠다.
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .formLogin().disable()
-                .httpBasic().disable()
-                .apply(new MyCustomDsl())
-                .and()
-                .authorizeRequests()
-                .antMatchers("/api/v1/user/**")
-                .access("hasRole('ROLE_USER')")
-                .anyRequest().permitAll();
-
-        return http.build();  // SecurityFilterChain 생성
+    public JwtAuthenticationProvider jwtAuthenticationProvider() throws Exception {
+        return new JwtAuthenticationProvider(principalUserDetailsService, passwordEncoder());
     }
 
-    public class MyCustomDsl extends AbstractHttpConfigurer<MyCustomDsl, HttpSecurity> {
-        @Override
-        public void configure(HttpSecurity http) throws Exception {
-            AuthenticationManager authenticationManager = http.getSharedObject(AuthenticationManager.class);
-            http
-                    .addFilter(corsFilter)
-                    .addFilter(new JwtAuthenticationFilter(authenticationManager, refreshTokenRepository, jwtService))
-                    .addFilter(new JwtAuthorizationFilter(authenticationManager, userRepository, refreshTokenRepository, jwtService));
-        }
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter(AuthenticationManager authenticationManager) {
+        JwtAuthenticationFilter authenticationFilter = new JwtAuthenticationFilter(authenticationManager, refreshTokenRepository, jwtUtils);
+        authenticationFilter.setAuthenticationManager(authenticationManager);
+
+        SecurityContextRepository contextRepository = new HttpSessionSecurityContextRepository();
+        authenticationFilter.setSecurityContextRepository(contextRepository);
+
+        return authenticationFilter;
+    }
+
+    @Bean
+    public JwtAuthorizationFilter jwtAuthorizationFilter(AuthenticationManager authenticationManager) {
+        JwtAuthorizationFilter authorizationFilter = new JwtAuthorizationFilter(authenticationManager, userRepository, refreshTokenRepository, jwtUtils);
+        return authorizationFilter;
+    }
 }

@@ -1,4 +1,4 @@
-package com.web.flower.security.oauth.provider;
+package com.web.flower.domain.social_login.provider;
 
 import java.util.Map;
 

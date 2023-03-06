@@ -1,4 +1,4 @@
-package com.web.flower.domain.jwt.controller;
+package com.web.flower.domain.refresh_token.controller;
 
 import com.web.flower.security.auth.PrincipalDetails;
 import org.springframework.security.core.Authentication;
@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController("/token")
-public class TokenController {
+public class RefreshTokenController {
 
     // user, manager, admin 접근 가능
     @GetMapping("/api/v1/user")

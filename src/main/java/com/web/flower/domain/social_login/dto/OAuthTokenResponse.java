@@ -1,8 +1,6 @@
-package com.web.flower.security.oauth.dto;
+package com.web.flower.domain.social_login.dto;
 
 import lombok.Data;
-
-import java.util.Map;
 
 @Data
 public class OAuthTokenResponse {

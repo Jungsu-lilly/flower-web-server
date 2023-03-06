@@ -1,11 +1,9 @@
 package com.web.flower.domain.user.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.web.flower.domain.jwt.service.JwtService;
+import com.web.flower.utils.JwtUtils;
 import com.web.flower.domain.message.Message;
 import com.web.flower.domain.user.dto.UserReqDto;
-import com.web.flower.domain.user.dto.UserResDto;
-import com.web.flower.domain.user.dto.UserResListDto;
 import com.web.flower.domain.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,8 +14,6 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Arrays;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,7 +21,7 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
-    private final JwtService jwtService;
+    private final JwtUtils jwtUtils;
 
     @PostMapping("/one")
     public ResponseEntity<?> createOne(@RequestBody UserReqDto.ReqSignUp req){
@@ -68,29 +64,15 @@ public class UserController {
 
     @PostMapping("/logout")
     public void logOut(HttpServletRequest request, HttpServletResponse response) throws Exception {
-        Message message = new Message();
+        userService.logOut();
 
-        Cookie cookie = Arrays.stream(request.getCookies())
-                .filter(r -> r.getName().equals("Authorization"))
-                .findAny()
-                .orElse(null);
-
-        String accessToken = cookie.getValue();
-
-        try{
-            jwtService.validateToken(accessToken);
-        }
-        catch (Exception e){
-            throw new Exception("Invalid Username");
-        }
-
-        Cookie resCookie = new Cookie("Authorization", accessToken);
+        Cookie resCookie = new Cookie("flower_token", "1234");
         resCookie.setMaxAge(0);
         resCookie.setHttpOnly(true);
         resCookie.setPath("/");
         response.addCookie(resCookie);
 
-        message = Message.builder()
+        Message message = Message.builder()
                 .status(HttpStatus.OK)
                 .message("success")
                 .memo("로그아웃 되었습니다.")

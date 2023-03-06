@@ -1,15 +1,15 @@
-package com.web.flower.security.oauth.service;
+package com.web.flower.domain.social_login.service;
 
+import com.web.flower.domain.social_login.dto.SocialLoginReqDto;
 import com.web.flower.domain.user.entity.User;
 import com.web.flower.domain.user.repository.UserRepository;
-import com.web.flower.security.oauth.dto.LoginResponse;
-import com.web.flower.security.oauth.dto.OAuthTokenResponse;
-import com.web.flower.security.oauth.provider.KakaoUserInfo;
-import com.web.flower.security.oauth.provider.NaverUserInfo;
-import com.web.flower.security.oauth.provider.OAuth2UserInfo;
-import com.web.flower.domain.jwt.entity.RefreshToken;
-import com.web.flower.domain.jwt.repository.RefreshTokenRepository;
-import com.web.flower.domain.jwt.service.JwtService;
+import com.web.flower.domain.social_login.dto.LoginResponse;
+import com.web.flower.domain.social_login.dto.OAuthTokenResponse;
+import com.web.flower.domain.social_login.provider.KakaoUserInfo;
+import com.web.flower.domain.social_login.provider.OAuth2UserInfo;
+import com.web.flower.domain.refresh_token.entity.RefreshToken;
+import com.web.flower.domain.refresh_token.repository.RefreshTokenRepository;
+import com.web.flower.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -22,7 +22,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import javax.persistence.NonUniqueResultException;
 import javax.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -31,7 +30,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class OauthService {
+public class SocialLoginService {
     private static final String BEARER_TYPE = "Bearer";
 
     private final ClientRegistrationRepository clientRegistrationRepository;
@@ -42,15 +41,16 @@ public class OauthService {
     
     private final RefreshTokenRepository refreshTokenRepository;
 
-    private final JwtService jwtService;
+    private final JwtUtils jwtUtils;
 
     @Transactional
-    public LoginResponse login(String providerName, String code){
-        System.out.println("--- OauthService: login() 실행 -----");
+    public LoginResponse socialLogin(SocialLoginReqDto req){
+        String providerName = req.getProvider();
+        String code = req.getCode();
+
         ClientRegistration provider = clientRegistrationRepository.findByRegistrationId(providerName);
         // code -> access token 으로 인가서버에 교환요청
         OAuthTokenResponse tokenResponse = getToken(code, provider);
-        System.out.println("--- 인가서버 accessToken : " + tokenResponse.getAccess_token());
 
         // access token을 인가서버 userInfo 엔드포인트에 넘겨서 유저 정보를 가져옴
         Map<String, Object> userAttributes = WebClient.create()
@@ -61,7 +61,6 @@ public class OauthService {
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .block();
 
-        System.out.println("userAttributes = " + userAttributes);
         OAuth2UserInfo oauth2UserInfo = null;
 
         if(providerName.equals("kakao")){
@@ -71,7 +70,6 @@ public class OauthService {
         }
 
         providerName = oauth2UserInfo.getProvider();
-        String providerId = oauth2UserInfo.getProviderId();
 
         // oauth로 로그인하면 사실 username, password는 의미없음. 그냥 만들어주는것
         String username = providerName +"_"+oauth2UserInfo.getProviderId(); // kakao_123452134qwewe123123
@@ -99,8 +97,8 @@ public class OauthService {
         }
 
         // 새로운 access, refresh token 생성
-        String accessToken = jwtService.createAccessToken(userEntity);
-        String refreshToken = jwtService.createRefreshToken(userEntity);
+        String accessToken = jwtUtils.createAccessToken(userEntity);
+        String refreshToken = jwtUtils.createRefreshToken(userEntity);
 
         Optional<RefreshToken> byUserId = refreshTokenRepository.findByUserId(userEntity.getId());
         if(byUserId.isPresent()){ // 해당 사용자의 리프레쉬 토큰이 이미 있다면 삭제한다.
@@ -112,8 +110,6 @@ public class OauthService {
                 .userId(userEntity.getId())
                 .build();
         refreshTokenRepository.save(buildRefreshToken);
-
-        RefreshToken save = refreshTokenRepository.save(buildRefreshToken);
 
         return LoginResponse.builder()
                 .id(userEntity.getId())
