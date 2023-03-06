@@ -4,7 +4,7 @@ import com.web.flower.domain.flower_test_result.dto.FlowerTestResultReqDto;
 import com.web.flower.domain.flower_test_result.dto.FlowerTestResultResDto;
 import com.web.flower.domain.flower_test_result.service.FlowerTestResultService;
 import com.web.flower.domain.message.Message;
-import com.web.flower.domain.refresh_token.service.JwtService;
+import com.web.flower.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,13 +19,13 @@ import java.util.UUID;
 public class FlowerTestResultController {
 
     private final FlowerTestResultService flowerTestResultService;
-    private final JwtService jwtService;
 
     @PostMapping("/one")
     public ResponseEntity<?> createOne(@RequestBody FlowerTestResultReqDto.ReqCreate req){
         try {
-            flowerTestResultService.createOne(req);
+            FlowerTestResultResDto.ResCreateOne result = flowerTestResultService.createOne(req);
             Message message = Message.builder()
+                    .data(result)
                     .status(HttpStatus.OK)
                     .message("success")
                     .build();

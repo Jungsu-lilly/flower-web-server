@@ -8,8 +8,9 @@ import com.web.flower.domain.user.entity.User;
 import com.web.flower.domain.user.repository.UserRepository;
 import com.web.flower.domain.refresh_token.entity.RefreshToken;
 import com.web.flower.domain.refresh_token.repository.RefreshTokenRepository;
-import com.web.flower.domain.refresh_token.service.JwtService;
+import com.web.flower.utils.JwtUtils;
 import com.web.flower.domain.message.Message;
+import com.web.flower.utils.CookieUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,39 +31,29 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
     private UserRepository userRepository;
     private RefreshTokenRepository refreshTokenRepository;
-    private JwtService jwtService;
+    private JwtUtils jwtUtils;
 
     private BasicAuthenticationConverter authenticationConverter = new BasicAuthenticationConverter();
 
-    public JwtAuthorizationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, JwtService jwtService) {
+    public JwtAuthorizationFilter(AuthenticationManager authenticationManager, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, JwtUtils jwtUtils) {
         super(authenticationManager);
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
-        this.jwtService = jwtService;
+        this.jwtUtils = jwtUtils;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
-        System.out.println("=== [Authorization Filter] 인증이나 권한이 필요한 주소 요청됨 ===");
+        String accessToken = null;
 
-        Cookie cookie = null;
-        /**
-         * 요청에 엑세스 토큰이 존재하는지 여부 판단. 존재하지 않을 경우 다음 필터로 넘긴다.*/
         try {
-            cookie = Arrays.stream(request.getCookies())
+            Cookie cookie = Arrays.stream(request.getCookies())
                     .filter(r -> r.getName().equals("flower_token"))
                     .findAny()
                     .orElse(null);
-        } catch (Exception e) { // 엑세스토큰이 존재 X
-            chain.doFilter(request, response);
-            return;
-        }
 
-        String accessToken = "";
-        try{
             accessToken = cookie.getValue();
-        }
-        catch (NullPointerException e){
+        } catch (Exception e) { // 엑세스토큰이 존재 X
             chain.doFilter(request, response);
             return;
         }
@@ -70,36 +61,30 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
         boolean isAccessTokenExpired = false;
 
         try {
-            String username = jwtService.validateToken(accessToken);
+            String username = jwtUtils.validateToken(accessToken);
         } catch (TokenExpiredException e) {
-            System.out.println("=== Access Token Expired ======");
             isAccessTokenExpired = true;
-        } catch (SignatureVerificationException e) {
-            // 토큰 서명 오류
-            System.out.println("=== 토큰값 서명이 올바르지 않습니다. 다시 입력해주세요 ======");
+        } catch (SignatureVerificationException e) { // 토큰 서명 오류
             chain.doFilter(request, response);
             return;
         }
 
-        /**
-         * 엑세스토큰이 만료된 경우 */
         if (isAccessTokenExpired) {
-            System.out.println("엑세스 토큰 만료");
-
-            String userId = jwtService.getUserIdFromToken(accessToken);
+            String userId = jwtUtils.getUserIdFromToken(accessToken);
             Optional<User> findUser = userRepository.findById(UUID.fromString(userId));
             User user = findUser.get();
 
             Optional<RefreshToken> findRefreshToken = refreshTokenRepository.findByUserId(UUID.fromString(userId));
             if (!findRefreshToken.isPresent()) { // 리프레시 토큰이 없다면
-                makeResponse(request, response, HttpStatus.NOT_FOUND, "no refresh_token exists", "재인증(로그인) 필요");
+                makeResponse(request, response, HttpStatus.NOT_FOUND, "fail", "재인증(로그인)이 필요합니다.");
                 chain.doFilter(request, response);
                 return;
             }
+
             RefreshToken refreshToken = findRefreshToken.get();
             try {
                 String refreshTokenValue = refreshToken.getValue();
-                jwtService.validateToken(refreshTokenValue);
+                jwtUtils.validateToken(refreshTokenValue);
             } catch (TokenExpiredException e) { // 리프레시 토큰 만료
                 refreshTokenRepository.delete(refreshToken);
                 chain.doFilter(request, response);
@@ -108,16 +93,11 @@ public class JwtAuthorizationFilter extends BasicAuthenticationFilter {
 
             /**
              * 리프레시 토큰 유효함. 엑세스토큰 재발급 **/
-            String newAccessToken = jwtService.createAccessToken(user);
-
-            Cookie resCookie = new Cookie("flower_token", newAccessToken);
-            resCookie.setMaxAge(60*60*3); // 3시간
-            resCookie.setPath("/");
-            resCookie.setHttpOnly(true);
-            response.addCookie(resCookie);
+            String newAccessToken = jwtUtils.createAccessToken(user);
+            CookieUtils.makeCookie(accessToken, response);
         }
 
-        String userId = jwtService.getUserIdFromToken(accessToken);
+        String userId = jwtUtils.getUserIdFromToken(accessToken);
         User user = userRepository.findById(UUID.fromString(userId)).get();
 
         PrincipalDetails principalDetails = new PrincipalDetails(user);

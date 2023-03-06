@@ -1,5 +1,7 @@
 package com.web.flower.domain.flower_test_result.service;
 
+import com.web.flower.domain.flower_select_result.entity.FlowerSelectResult;
+import com.web.flower.domain.flower_select_result.repository.FlowerSelectResultRepository;
 import com.web.flower.domain.flower_test_result.dto.FlowerTestResultReqDto;
 import com.web.flower.domain.flower_test_result.dto.FlowerTestResultResDto;
 import com.web.flower.domain.flower_test_result.entity.FlowerTestResult;
@@ -7,10 +9,7 @@ import com.web.flower.domain.flower_test_result.repository.FlowerTestResultRepos
 import com.web.flower.domain.user.entity.User;
 import com.web.flower.domain.user.repository.UserRepository;
 import com.web.flower.utils.SecurityContextHolderUtils;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -21,11 +20,11 @@ import java.util.*;
 public class FlowerTestResultService {
 
     private final FlowerTestResultRepository flowerTestResultRepository;
+    private final FlowerSelectResultRepository flowerSelectResultRepository;
     private final UserRepository userRepository;
 
-    public void createOne(FlowerTestResultReqDto.ReqCreate req) throws Exception {
+    public FlowerTestResultResDto.ResCreateOne createOne(FlowerTestResultReqDto.ReqCreate req) throws Exception {
         String username = SecurityContextHolderUtils.getUsername();
-        System.out.println("username = " + username);
 
         Optional<User> findUser = userRepository.findByUsername(username);
         if(!findUser.isPresent()){
@@ -44,8 +43,15 @@ public class FlowerTestResultService {
                 .flowerNum(req.getFlowerNum())
                 .createdAt(LocalDateTime.now())
                 .build();
-
         flowerTestResultRepository.save(flowerTestResult);
+
+        boolean select = false;
+        Optional<FlowerSelectResult> findFlowerSelectResult = flowerSelectResultRepository.findByUserAndFlowerNum(username, flowerNum);
+        if(findFlowerSelectResult.isPresent()){ // 찜한 꽃이라면
+            select = true;
+        }
+        FlowerTestResultResDto.ResCreateOne resTestResult = new FlowerTestResultResDto.ResCreateOne(flowerTestResult.getId(), flowerNum, select);
+        return resTestResult;
     }
 
     public List<FlowerTestResultResDto> searchListByUser() throws Exception {

@@ -19,7 +19,6 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
     @Override
     @Transactional
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        System.out.println("=== FormAuthenticationProvider 실행 ===");
         String username = authentication.getName();
         String password = (String) authentication.getCredentials();
 
