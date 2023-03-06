@@ -21,6 +21,11 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.SecurityContextRepository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import javax.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -32,13 +37,12 @@ public class SecurityConfig {
     private final JwtUtils jwtUtils;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, HttpServletResponse response) throws Exception {
         AuthenticationManager authenticationManager = authenticationManager(http.getSharedObject(AuthenticationConfiguration.class));
         JwtAuthenticationFilter jwtAuthenticationFilter = jwtAuthenticationFilter(authenticationManager);
         JwtAuthorizationFilter jwtAuthorizationFilter = jwtAuthorizationFilter(authenticationManager);
 
         http
-                .cors().disable()
                 .csrf().disable()
                 .formLogin().disable()
                 .httpBasic().disable()
@@ -48,13 +52,13 @@ public class SecurityConfig {
         http
                 .headers().frameOptions().sameOrigin();
 
-        http
-                .authorizeRequests()
-                .antMatchers("/api/social-login/**", "/api/login", "/api/user/one", "/api/user/logout")
-                .permitAll()
-                .antMatchers("/api/**")
-                .access("hasRole('ROLE_USER')")
-                .anyRequest().permitAll();
+//        http
+//                .authorizeRequests()
+//                .antMatchers("/api/social-login/**", "/api/login", "/api/user/one", "/api/user/logout")
+//                .permitAll()
+//                .antMatchers("/api/**")
+//                .access("hasRole('ROLE_USER')")
+//                .anyRequest().permitAll();
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterAfter(jwtAuthorizationFilter, JwtAuthenticationFilter.class);

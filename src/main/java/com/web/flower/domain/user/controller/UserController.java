@@ -25,7 +25,6 @@ public class UserController {
 
     @PostMapping("/one")
     public ResponseEntity<?> createOne(@RequestBody UserReqDto.ReqSignUp req){
-        System.out.println("--- 유저 생성 -----");
         Message message = new Message();
         try {
             userService.createOne(req);
