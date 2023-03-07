@@ -43,6 +43,7 @@ public class SecurityConfig {
         JwtAuthorizationFilter jwtAuthorizationFilter = jwtAuthorizationFilter(authenticationManager);
 
         http
+                .cors().disable()
                 .csrf().disable()
                 .formLogin().disable()
                 .httpBasic().disable()
@@ -52,13 +53,13 @@ public class SecurityConfig {
         http
                 .headers().frameOptions().sameOrigin();
 
-//        http
-//                .authorizeRequests()
-//                .antMatchers("/api/social-login/**", "/api/login", "/api/user/one", "/api/user/logout")
-//                .permitAll()
-//                .antMatchers("/api/**")
-//                .access("hasRole('ROLE_USER')")
-//                .anyRequest().permitAll();
+        http
+                .authorizeRequests()
+                .antMatchers("/api/social-login/**", "/api/login", "/api/user/one", "/api/user/logout")
+                .permitAll()
+                .antMatchers("/api/**")
+                .access("hasRole('ROLE_USER')")
+                .anyRequest().permitAll();
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterAfter(jwtAuthorizationFilter, JwtAuthenticationFilter.class);
