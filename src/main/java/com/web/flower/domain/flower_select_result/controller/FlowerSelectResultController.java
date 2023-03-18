@@ -58,11 +58,11 @@ public class FlowerSelectResultController {
         }
     }
 
-    @DeleteMapping("/one/{id}")
-    public ResponseEntity<?> deleteOne(@PathVariable("id")UUID id){
+    @DeleteMapping("/one/{flowerNum}")
+    public ResponseEntity<?> deleteOne(@PathVariable("flowerNum")int flowerNum){
         Message message = new Message();
         try {
-            flowerSelectResultService.deleteOne(id);
+            flowerSelectResultService.deleteOne(flowerNum);
             message = Message.builder()
                     .status(HttpStatus.OK)
                     .message("success")

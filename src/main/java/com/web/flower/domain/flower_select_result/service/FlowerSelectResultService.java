@@ -64,14 +64,14 @@ public class FlowerSelectResultService {
         return resFlowerList;
     }
 
-    public void deleteOne(UUID id) throws Exception {
+    public void deleteOne(int flowerNum) throws Exception {
         String username = SecurityContextHolderUtils.getUsername();
         Optional<User> findUser = userRepository.findByUsername(username);
         if(!findUser.isPresent()){
             throw new Exception("유저가 존재하지 않습니다. userId 확인 요망");
         }
 
-        Optional<FlowerSelectResult> findFlowerSelectResult = flowerSelectResultRepository.findById(id);
+        Optional<FlowerSelectResult> findFlowerSelectResult = flowerSelectResultRepository.findByUserAndFlowerNum(username, flowerNum);
         if(!findFlowerSelectResult.isPresent()){
             throw new Exception("유저아이디와 꽃 번호를 다시 한번 확인해주세요.");
         }

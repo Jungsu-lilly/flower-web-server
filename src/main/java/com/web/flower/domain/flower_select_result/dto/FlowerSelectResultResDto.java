@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Getter
 @Builder
@@ -17,14 +16,13 @@ import java.util.UUID;
 @AllArgsConstructor
 public class FlowerSelectResultResDto {
 
-    private UUID id;
     private int flowerNum;
     private LocalDateTime createdAt;
 
     public static List<FlowerSelectResultResDto> toDto(List<FlowerSelectResult> flowerSelectResults) {
         List<FlowerSelectResultResDto> list = new ArrayList<>();
         flowerSelectResults.forEach(f -> {
-            list.add(new FlowerSelectResultResDto(f.getId(), f.getFlowerNum(), f.getCreatedAt()));
+            list.add(new FlowerSelectResultResDto(f.getFlowerNum(), f.getCreatedAt()));
         });
         return list;
     }
