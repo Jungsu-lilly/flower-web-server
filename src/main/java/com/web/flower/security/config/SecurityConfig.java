@@ -23,6 +23,7 @@ import org.springframework.security.web.context.SecurityContextRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.CorsUtils;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.servlet.http.HttpServletResponse;
@@ -55,6 +56,7 @@ public class SecurityConfig {
 
         http
                 .authorizeRequests()
+                .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
                 .antMatchers("/api/social-login/**", "/api/login", "/api/user/one", "/api/user/logout")
                 .permitAll()
                 .antMatchers("/api/**")
